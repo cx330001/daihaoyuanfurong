@@ -8,40 +8,51 @@
     <title>我的工作台</title>
     <style>
         /* === 基础样式 === */
-       body, html {
-    /* 确保这里是你想要的深色背景，否则刘海区域和底部区域会泛白 */
-    background-color: #1e1e2f; 
+       /* 1. 根节点样式：负责填充“刘海”和“下巴”的底色 */
+html, body {
+    margin: 0;
+    padding: 0;
     width: 100%;
     height: 100%;
-}
-#phone-screen {
-    /* 1. 铺满全屏，从物理屏幕的最边缘开始 */
+    /* 关键：将底色设为黑色！
+       这样当 #phone-screen 下移后，露出来的顶部和底部就是黑色的，看起来像原生状态栏 */
+    background-color: #000000; 
+    /* 禁止整个页面的弹性滚动（橡皮筋效果） */
+    overflow: hidden;
     position: fixed;
-    top: 0;
+}
+
+/* 2. 主容器样式：你的 App 内容 */
+#phone-screen {
+    /* 固定定位 */
+    position: fixed;
+    
+    /* === 核心布局逻辑 === */
+    /* 顶部：从安全区域下方开始（背景真的下移了，避开刘海） */
+    top: env(safe-area-inset-top);
+    
+    /* 底部：从安全区域上方结束（避开底部横条） */
+    bottom: env(safe-area-inset-bottom);
+    
+    /* 左右撑满 */
     left: 0;
     right: 0;
-    bottom: 0;
-    width: 100%;
-    height: 100%;
-    
-    /* 2. 背景色在这里或者在 body 设置都可以，确保覆盖全屏 */
-    background-color: var(--secondary-bg); /* 或者写死 #1e1e2f */
 
-    /* 3. 关键：使用 padding 来避开刘海和底部横条 */
-    /* 这样背景是全屏的，但里面的文字/按钮不会被遮挡 */
-    padding-top: env(safe-area-inset-top);
-    padding-bottom: env(safe-area-inset-bottom);
+    /* 不需要设置 height，因为 top 和 bottom 已经决定了它的高度 */
     
-    /* 4. 确保 padding 不会把容器撑大导致出现滚动条 */
-    box-sizing: border-box; 
+    /* 你的背景色 */
+    background-color: var(--secondary-bg); 
+    /* 或者你的渐变背景 */
+    /* background: linear-gradient(135deg, #1e1e2f, #2d2d44); */
 
-    /* 其他原有样式 */
-    overflow: hidden;
+    /* 内部布局 */
     display: flex;
     flex-direction: column;
-    border-radius: 0;
-    border: none;
-    box-shadow: none;
+    overflow: hidden; /* 确保容器内部若有溢出也切断 */
+    
+    /* 既然容器已经避开了刘海，这里就不要再加 padding 了，否则会双倍间距 */
+    padding-top: 0;
+    padding-bottom: 0;
 }
 
         /* === 1. 桌面启动器 (Launcher) === */
