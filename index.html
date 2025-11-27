@@ -51,35 +51,21 @@
             padding-right: 20px;
         }
 
-                /* === 1. 桌面启动器 (Launcher) === */
+        /* === 1. 桌面启动器 (Launcher) === */
         #launcher {
-            /* 关键修改：改为绝对定位，占满全屏 */
-            position: absolute; 
-            top: 0;
-            left: 0;
             width: 100%;
-            height: 100%; /* 使用 100% 而不是 100vh，兼容性更好 */
-            
+            height: 100vh;
+            position: relative;
             overflow: hidden;
             display: flex;
             flex-direction: column;
             background: linear-gradient(135deg, #6DD5FA, #2980B9);
             background-size: cover;
             background-position: center;
-            z-index: 10; /* 默认层级 */
-            transition: all 0.3s ease-in-out; /* 增加过渡让动画更顺滑 */
         }
 
         /* 隐藏启动器时的动画 */
-        #launcher.hidden { 
-            transform: scale(1.2); 
-            opacity: 0; 
-            pointer-events: none; 
-            /* 注意：不要使用 display:none，否则动画会失效 */
-        }
-
-      
-
+        #launcher.hidden { transform: scale(1.2); opacity: 0; pointer-events: none; }
 
         .app-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 40px; }
 
@@ -102,30 +88,33 @@
 
         .app-name { font-size: 14px; color: #333; font-weight: 500; text-shadow: 0 1px 2px rgba(255,255,255,0.5); }
 
-             /* === 2. 应用容器 (App Container) === */
+     /* === 2. 应用容器 (App Container) === */
         #app-viewer {
-            /* 关键修改：同样改为绝对定位，强行重叠在启动页位置 */
-            position: absolute;
+            width: 100%;
+            height: 100%; /* 使用 100% 继承 body 高度，比 100vh 更稳定 */
+            
+            /* 关键修改：改为绝对定位，使其完美覆盖在启动页之上 */
+            position: absolute; 
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
             
             overflow: hidden;
             display: flex;
             flex-direction: column;
-            background: #fff; /* iframe加载前显示的背景色 */
+            background: linear-gradient(135deg, #6DD5FA, #2980B9);
+            background-size: cover;
+            background-position: center;
             
+            /* 默认隐藏状态 */
             opacity: 0;
             visibility: hidden;
-            z-index: 5; /* 默认层级比启动器低 */
-            transition: opacity 0.3s ease;
+            z-index: 50; 
+            transition: all 0.4s ease-in-out; /* 加上过渡让切换更自然 */
         }
 
         #app-viewer.active { 
             opacity: 1;
             visibility: visible;
-            z-index: 20; /* 激活时层级最高，盖住启动器 */ 
         }
 
         iframe { 
@@ -133,12 +122,14 @@
             height: 100%; 
             border: none; 
             display: none; 
-            /* 确保 iframe 也是块级显示，去除间隙 */
-            display: block; 
+            
+            /* 关键修改：确保 iframe 撑满 flex 容器 */
+            flex: 1; 
         }
         
-        /* iframe 显示控制由 JS 处理，这里只需保证 fill 铺满 */
-        iframe.show { display: block; }
+        iframe.show { 
+            display: block; 
+        }
 
         /* === 3. 悬浮按钮 (FAB) === */
         /* 主按钮 */
