@@ -2,72 +2,66 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <!-- 关键配置：viewport-fit=cover 让网页延伸到刘海和底部黑条区域 -->
+    <!-- 核心：viewport-fit=cover 是必须的 -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>EPhone Launcher</title>
+    <title>My OS</title>
+    
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
     
     <style>
-        /* --- 全局重置 --- */
-        * {
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-            outline: none;
-        }
-
+        /* 1. 根元素必须占满，且背景设为黑，防止白边 */
         html, body {
             margin: 0;
             padding: 0;
             width: 100%;
             height: 100%;
-            overflow: hidden; /* 禁止页面整体滚动 */
-            background-color: #f2f2f7; /* iOS 浅灰背景 */
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            overflow: hidden;
+            background-color: #000; 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         }
 
-        /* --- App 容器 (Iframe) --- */
-        /* 这里的设置保证 App 打开时绝对覆盖到底部黑条区域 */
+        /* 2. 启动器界面 */
+        #launcher {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            /* 背景图：这里随便找了一张，你可以换成你喜欢的 */
+            background: url('https://images.unsplash.com/photo-1620121692029-d088224ddc74?q=80&w=2532&auto=format&fit=crop') no-repeat center center;
+            background-size: cover;
+            display: flex;
+            flex-direction: column;
+            justify-content: center; /* 垂直居中 */
+            align-items: center;
+            z-index: 10;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        /* 3. 应用容器 (IFRAME) - 绝对全屏修复 */
         .app-frame {
             display: block;
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            border: none;
-            background: #fff;
-            z-index: 0;
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.3s ease, transform 0.3s ease;
-            transform: scale(0.95); /* 默认稍微缩小 */
-        }
-
-        .app-frame.active {
-            z-index: 100; /* 提到最上层 */
-            opacity: 1;
-            visibility: visible;
-            transform: scale(1);
-        }
-
-        /* --- 启动器主界面 --- */
-        #launcher {
-            position: fixed; /* 强制固定，铺满全屏 */
+            position: fixed; /* 必须用 fixed，否则会被Safari推上去 */
             top: 0;
             left: 0;
             right: 0;
-            bottom: 0;
-            z-index: 10;
-            background-color: #f2f2f7; /* 背景色要延伸到最底部 */
-            overflow-y: auto; /* 允许内部内容滚动 */
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            /* 只有内容需要避让刘海和黑条，背景不需要 */
-            padding-top: calc(50px + env(safe-area-inset-top)); 
-            padding-bottom: calc(20px + env(safe-area-inset-bottom));
-            transition: opacity 0.3s ease, transform 0.3s ease;
+            bottom: 0; /* 强行拉到底 */
+            width: 100vw;
+            height: 100vh; /* 强行占满视口高度 */
+            border: none;
+            background: #000; /* 加载时背景为黑 */
+            z-index: 0;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease;
+            
+            /* 关键：让 iframe 内部滚动流畅 */
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .app-frame.active {
+            z-index: 20;
+            opacity: 1;
+            visibility: visible;
         }
 
         #launcher.hidden {
@@ -76,338 +70,134 @@
             transform: scale(1.1);
         }
 
-        /* --- 1. 个人资料卡片 (Profile Widget) --- */
-        .profile-widget {
-            width: 90%;
-            background: #fff;
-            border-radius: 20px;
-            overflow: visible; /* 允许头像溢出 */
-            position: relative;
-            margin-top: 40px; /* 给头像留空间 */
-            margin-bottom: 20px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-            text-align: center;
-            padding-top: 50px; /* 头像下方留白 */
-            padding-bottom: 20px;
-        }
-
-        .profile-banner {
-            position: absolute;
-            top: -50px; /* 向上溢出 */
-            left: 0;
-            width: 100%;
-            height: 100px;
-            background: #333; /* 你的黑色背景图占位 */
-            border-radius: 20px 20px 0 0;
-            z-index: 0;
-            display: none; /* 如果你想完全复刻截图里的样子，这里其实是纯白背景+头像 */
-        }
-
-        /* 截图中的头像 */
-        .profile-avatar {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            border: 4px solid #fff;
-            position: absolute;
-            top: -40px;
-            left: 50%;
-            transform: translateX(-50%);
-            background-image: url('https://i.postimg.cc/y8xWzCqj/anime-boy.jpg'); /* 你的头像 */
-            background-size: cover;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            z-index: 1;
-        }
-
-        .profile-name {
-            font-size: 20px;
-            font-weight: 700;
-            color: #000;
-            margin-bottom: 5px;
-        }
-
-        .profile-handle {
-            font-size: 14px;
-            color: #888;
-            margin-bottom: 10px;
-        }
-
-        .profile-bio {
-            font-size: 14px;
-            color: #333;
-            padding: 0 20px;
-            margin-bottom: 10px;
-            line-height: 1.4;
-        }
-
-        .profile-tag {
-            display: inline-block;
-            background: #f0f0f0;
-            padding: 4px 10px;
-            border-radius: 12px;
-            font-size: 12px;
-            color: #666;
-        }
-
-        /* --- 2. 语录组件区域 (Widget Area) --- */
-        .widget-area {
-            width: 90%;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-bottom: 30px;
-        }
-
-        .text-widget {
+        /* 图标样式 (仿 EPhone) */
+        .desktop-app-icon {
             display: flex;
             flex-direction: column;
-            justify-content: center;
-            font-size: 14px;
-            font-weight: 600;
-            color: #000;
-            line-height: 1.4;
-        }
-
-        .icon-widget {
-            background: #fff;
-            padding: 15px;
-            border-radius: 20px;
-            display: flex;
             align-items: center;
-            justify-content: center;
             gap: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.03);
-            font-size: 13px;
-            font-weight: 500;
+            cursor: pointer;
+            margin: 20px;
+            transition: transform 0.1s;
         }
-        
-        .icon-widget img {
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-        }
+        .desktop-app-icon:active { transform: scale(0.9); }
 
-        /* --- 3. 应用图标网格 (中间区域) --- */
-        .app-grid {
-            width: 90%;
+        .icon-bg {
+            width: 65px; height: 65px;
+            border-radius: 16px;
+            overflow: hidden;
+            background: rgba(255,255,255,0.2);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+        .icon-bg img { width: 100%; height: 100%; object-fit: cover; }
+        .label { color: white; font-size: 14px; text-shadow: 0 1px 3px rgba(0,0,0,0.8); font-weight: 500; }
+
+        /* 应用列表容器 */
+        #app-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
             gap: 20px;
-            padding-bottom: 20px;
         }
 
-        .app-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            cursor: pointer;
-        }
-
-        .app-item:active {
-            opacity: 0.7;
-            transform: scale(0.98);
-        }
-
-        .app-icon {
-            width: 65px;
-            height: 65px;
-            border-radius: 18px; /* iOS 风格圆角 */
-            background: #fff;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
-            margin-bottom: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            font-weight: bold;
-            overflow: hidden;
-        }
-        
-        .app-icon img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .app-label {
-            font-size: 13px;
-            color: #333;
-            font-weight: 500;
-        }
-
-        /* --- 4. 底部 Dock 栏 (最关键的部分) --- */
-        .dock-spacer {
-            flex-grow: 1; /* 撑开空间 */
-        }
-
-        .dock {
-            width: 90%;
-            background: rgba(255, 255, 255, 0.65);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-radius: 30px;
-            padding: 15px 20px;
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            margin-bottom: 10px; /* 距离底部黑条一点距离 */
-            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
-        }
-
-        .dock .app-item .app-icon {
-            width: 55px;
-            height: 55px;
-            margin-bottom: 0; /* Dock 图标通常没有文字，或者文字在下面 */
-            box-shadow: none;
-        }
-        
-        .dock .app-item .app-label {
-            display: none; /* Dock 栏通常不显示文字，为了美观 */
-        }
-
-        /* --- 悬浮操作球 (FAB) --- */
+        /* 悬浮按钮 (FAB) - 位置要避开 Home Bar */
         #fab-control {
             position: fixed;
-            bottom: calc(30px + env(safe-area-inset-bottom));
+            bottom: calc(20px + env(safe-area-inset-bottom)); /* 智能避开底部黑条 */
             right: 20px;
-            z-index: 200;
-            display: none; /* 默认隐藏，进 APP 后显示 */
+            z-index: 100;
+            display: none;
             flex-direction: column;
             gap: 15px;
-            align-items: center;
         }
-
-        #fab-control.visible {
-            display: flex;
-        }
+        #fab-control.visible { display: flex; }
 
         .fab-btn {
-            width: 50px;
-            height: 50px;
+            width: 50px; height: 50px;
             border-radius: 50%;
-            background: rgba(0, 0, 0, 0.6);
+            background: rgba(30, 30, 30, 0.7);
             backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
             border: 1px solid rgba(255,255,255,0.2);
             color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
             cursor: pointer;
         }
-        
-        .fab-switch { background: rgba(0, 122, 255, 0.9); }
+        .fab-btn svg { width: 24px; height: 24px; stroke: white; stroke-width: 2; }
 
     </style>
 </head>
 <body>
 
-    <!-- 1. 桌面/启动器 -->
+    <!-- 桌面 -->
     <div id="launcher">
-        
-        <!-- 个人资料卡 -->
-        <div class="profile-widget">
-            <div class="profile-avatar"></div>
-            <div class="profile-name">@ insonneve 🪦</div>
-            <div class="profile-handle">@ insonneve</div>
-            <div class="profile-bio">你好像过得很好 迫不及待的抹去我存在的痕迹</div>
-            <div class="profile-tag">📍 北海道</div>
+        <!-- 时间小组件 -->
+        <div style="text-align: center; color: white; margin-bottom: 50px; text-shadow: 0 2px 10px rgba(0,0,0,0.5);">
+            <div id="clock" style="font-size: 70px; font-weight: 200; line-height: 1;">12:00</div>
+            <div id="date" style="font-size: 18px; margin-top: 5px; opacity: 0.9;">1月1日 星期一</div>
         </div>
 
-        <!-- 语录/组件区 -->
-        <div class="widget-area">
-            <div class="text-widget">
-                Be fearless in pursuit of happiness
-            </div>
-            <div class="icon-widget">
-                <!-- 占位图 -->
-                <img src="https://i.postimg.cc/y8xWzCqj/anime-boy.jpg">
-                <span>Dare to be different</span>
-            </div>
-            <div class="text-widget" style="font-size: 12px; color: #666;">
-                * Keep your spirit free
-            </div>
-            <div class="icon-widget" style="background: transparent; box-shadow: none; justify-content: flex-start;">
-                 <!-- 这里为了布局平衡留空或放小图 -->
-            </div>
-        </div>
-
-        <!-- 中间应用区 (App A: QQ / App B: 世界书) -->
-        <div class="app-grid">
-            <!-- App A 按钮 -->
-            <div class="app-item" onclick="openApp('frame-a')">
-                <div class="app-icon">
-                    <img src="https://i.postimg.cc/pXj9h20L/IMG-7275.jpg">
+        <div id="app-grid">
+            <!-- App A -->
+            <div class="desktop-app-icon" onclick="openApp('frame-a')">
+                <div class="icon-bg">
+                    <!-- 请替换这里为你 EPhone 的图标 -->
+                    <img src="https://i.postimg.cc/pXj9h20L/IMG-7275.jpg" alt="EPhone">
                 </div>
-                <span class="app-label">QQ</span>
+                <span class="label">EPhone</span>
             </div>
 
-            <!-- App B 按钮 -->
-            <div class="app-item" onclick="openApp('frame-b')">
-                <div class="app-icon">
-                    <img src="https://i.postimg.cc/HWf1JKzn/IMG-6435.jpg">
+            <!-- App B -->
+            <div class="desktop-app-icon" onclick="openApp('frame-b')">
+                <div class="icon-bg">
+                    <!-- 请替换这里为 App B 的图标 -->
+                    <img src="https://i.postimg.cc/HWf1JKzn/IMG-6435.jpg" alt="App B">
                 </div>
-                <span class="app-label">世界书</span>
-            </div>
-            
-            <!-- 装饰用图标 (不可点) -->
-            <div class="app-item">
-                <div class="app-icon"><img src="https://i.postimg.cc/T1j03pQr/IMG-6440.jpg"></div>
-                <span class="app-label">外观设置</span>
-            </div>
-            <div class="app-item">
-                <div class="app-icon"><img src="https://s3plus.meituan.net/opapisdk/op_ticket_885190757_1756312261242_qdqqd_g0eriz.jpeg"></div>
-                <span class="app-label">渲染器</span>
+                <span class="label">世界书</span>
             </div>
         </div>
-
-        <div class="dock-spacer"></div>
-
-        <!-- 底部 Dock 栏 -->
-        <div class="dock">
-            <div class="app-item">
-                <div class="app-icon"><img src="https://i.postimg.cc/MK8rJ8t7/IMG-6438.jpg"></div>
-            </div>
-            <div class="app-item">
-                <div class="app-icon"><img src="https://i.postimg.cc/pXxk1JXk/IMG-6442.jpg"></div>
-            </div>
-            <div class="app-item">
-                <div class="app-icon"><img src="https://i.postimg.cc/Pq2xJN1g/IMG-7301.jpg"></div>
-            </div>
-            <!-- 这里也可以放一个能打开 App A 的入口 -->
-            <div class="app-item" onclick="openApp('frame-a')">
-                <div class="app-icon"><img src="https://i.postimg.cc/pXj9h20L/IMG-7275.jpg"></div>
-            </div>
-        </div>
-
     </div>
 
-    <!-- 2. 应用容器 (IFRAME) -->
-    <!-- 关键：这里 src 替换成你的 EPhone 链接 和 另一个链接 -->
-    <iframe id="frame-a" class="app-frame" src="https://cx3300-1.github.io/ooooka/"></iframe>
-    <iframe id="frame-b" class="app-frame" src="https://cx3300-1.github.io/sfsfdf/"></iframe>
+    <!-- Iframe 容器：确保填入你的 GitHub 链接 -->
+    <!-- 警告：如果你的 EPhone 页面是在不同域名下，可能会有跨域限制，最好都在 github.io 下 -->
+    <iframe id="frame-a" class="app-frame" src="YOUR_GITHUB_URL_A"></iframe>
+    <iframe id="frame-b" class="app-frame" src="YOUR_GITHUB_URL_B"></iframe>
 
-    <!-- 3. 悬浮控制按钮 -->
+    <!-- 悬浮球 -->
     <div id="fab-control">
-        <div class="fab-btn fab-switch" onclick="switchApp()">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+        <!-- 切换 -->
+        <div class="fab-btn" onclick="switchApp()" style="background: rgba(0, 122, 255, 0.8);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
         </div>
+        <!-- 退出 -->
         <div class="fab-btn" onclick="exitToHome()">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
         </div>
     </div>
 
     <script>
+        // 时间更新
+        function updateClock() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            document.getElementById('clock').textContent = `${hours}:${minutes}`;
+            const options = { month: 'short', day: 'numeric', weekday: 'short' };
+            document.getElementById('date').textContent = now.toLocaleDateString('zh-CN', options);
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
         let currentApp = null;
         const launcher = document.getElementById('launcher');
         const fab = document.getElementById('fab-control');
 
         function openApp(frameId) {
             launcher.classList.add('hidden');
-            
             // 隐藏所有 frame
             document.querySelectorAll('.app-frame').forEach(f => f.classList.remove('active'));
-            
+            // 显示目标 frame
             const target = document.getElementById(frameId);
             if(target) {
                 target.classList.add('active');
@@ -430,13 +220,6 @@
             document.getElementById(nextApp).classList.add('active');
             currentApp = nextApp;
         }
-        
-        // 防止iOS橡皮筋回弹，这也是导致“露馅”的原因之一
-        document.body.addEventListener('touchmove', function(e) {
-            if (e.target.closest('#launcher')) return; // 允许桌面滚动
-            e.preventDefault();
-        }, { passive: false });
-
     </script>
 </body>
 </html>
