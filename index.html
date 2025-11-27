@@ -2,65 +2,79 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
+    <!-- 核心：viewport-fit=cover 解决刘海和底部黑条留白问题 -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>My OS</title>
+    <title>OS Launcher</title>
+    
+    <!-- PWA 相关设置，确保添加至主屏幕后无浏览器栏 -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#000000">
+
     <style>
-        :root {
-            --bg-gradient: linear-gradient(135deg, #1c1c1e 0%, #3a3a3c 100%);
-            --icon-size: 65px;
-            --fab-color: rgba(255, 255, 255, 0.2);
-            --fab-active: rgba(255, 255, 255, 0.9);
+        /* 全局重置，模拟原生应用环境 */
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
 
-        body, html {
+        html, body {
             margin: 0;
             padding: 0;
             width: 100%;
             height: 100%;
-            overflow: hidden;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background: #000;
-            user-select: none;
-            -webkit-user-select: none;
+            overflow: hidden; /* 禁止任何原生滚动 */
+            background-color: #000;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+            
+            /* 关键：防止 iOS 橡皮筋效果 */
+            position: fixed; 
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
         }
 
-        /* --- 启动器主屏幕 --- */
-        #launcher {
+        /* 
+           所有层级（启动器、App）都使用绝对定位层叠
+           模拟手机屏幕的图层概念
+        */
+        .screen-layer {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2564&auto=format&fit=crop') no-repeat center center;
-            background-size: cover;
+            z-index: 1;
+            transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.4s ease;
+            will-change: transform, opacity;
+        }
+
+        /* --- 启动器层样式 --- */
+        #launcher {
+            z-index: 10; /* 启动器默认在最上层 */
+            background: linear-gradient(160deg, #2b5876 0%, #4e4376 100%); /* 仿 iOS 壁纸风格 */
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            z-index: 10;
-            transition: transform 0.4s cubic-bezier(0.19, 1, 0.22, 1), opacity 0.4s;
+            padding-top: calc(15% + env(safe-area-inset-top)); /* 避开刘海 */
         }
 
-        /* 隐藏启动器时的状态 */
+        /* 启动器隐藏时的状态（类似 App 打开时的动画） */
         #launcher.hidden {
-            transform: scale(1.1);
             opacity: 0;
+            transform: scale(1.2); /* 放大淡出效果 */
             pointer-events: none;
         }
 
+        /* App 网格布局 */
         .app-grid {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 40px;
-            padding: 20px;
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-radius: 30px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            grid-template-columns: repeat(2, 1fr); /* 两列 */
+            gap: 40px; /* 图标间距 */
+            width: 80%;
+            max-width: 400px;
         }
 
         .app-item {
@@ -68,255 +82,208 @@
             flex-direction: column;
             align-items: center;
             cursor: pointer;
-            transition: transform 0.1s;
         }
 
         .app-item:active {
-            transform: scale(0.9);
+            opacity: 0.7;
+            transform: scale(0.95);
         }
 
+        /* 图标样式，仿 EPhone 圆角 */
         .app-icon {
-            width: var(--icon-size);
-            height: var(--icon-size);
+            width: 70px;
+            height: 70px;
             border-radius: 16px;
+            background-color: rgba(255,255,255,0.2);
+            backdrop-filter: blur(10px);
+            margin-bottom: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            overflow: hidden;
             background-size: cover;
             background-position: center;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-            margin-bottom: 8px;
-            position: relative;
-            overflow: hidden;
         }
 
-        /* 仿照 EPhone 的图标样式 */
-        .app-icon.app-a {
-            background-image: url('https://i.postimg.cc/pXj9h20L/IMG-7275.jpg'); /* 你的Cphone图标 */
-            background-color: #fff;
-        }
+        /* 为两个 App 设置特定图标 */
+        .icon-a { background-image: url('https://i.postimg.cc/pXj9h20L/IMG-7275.jpg'); } /* CPhone 图标 */
+        .icon-b { background-image: url('https://i.postimg.cc/HWf1JKzn/IMG-6435.jpg'); } /* 世界书 图标 */
 
-        .app-icon.app-b {
-            background-image: url('https://i.postimg.cc/HWf1JKzn/IMG-6435.jpg'); /* 你的世界书图标 */
-            background-color: #fff;
-        }
-
-        .app-label {
-            color: white;
-            font-size: 13px;
+        .app-name {
+            color: #fff;
+            font-size: 14px;
             font-weight: 500;
-            text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+            text-shadow: 0 1px 4px rgba(0,0,0,0.5);
         }
 
-        /* --- Iframe 容器 --- */
+        /* --- App 容器 (iframe) --- */
         .app-frame {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
             border: none;
             background: #fff;
-            z-index: 1; /* 默认在 launcher 之下 */
+            z-index: 1; /* 默认在底部 */
             opacity: 0;
             visibility: hidden;
-            transition: opacity 0.3s ease;
+            
+            /* 关键：填满所有安全区域 */
+            padding: 0;
+            margin: 0;
+            display: block;
         }
 
+        /* App 激活状态 */
         .app-frame.active {
-            z-index: 20; /* 提到最上层 */
+            z-index: 20; /* 盖过启动器 */
             opacity: 1;
             visibility: visible;
         }
 
-        /* --- 悬浮操作球 (FAB) --- */
-        #fab-container {
+        /* --- 悬浮导航球 (FAB) --- */
+        #fab {
             position: fixed;
-            bottom: 30px;
+            bottom: max(30px, env(safe-area-inset-bottom)); /* 适配底部黑条，在此之上 */
             right: 20px;
-            z-index: 1000;
-            display: none; /* 默认隐藏，只有进入 App 后显示 */
-            flex-direction: column-reverse;
-            align-items: center;
-            gap: 15px;
-        }
-
-        #fab-container.visible {
-            display: flex;
-        }
-
-        .fab-btn {
             width: 50px;
             height: 50px;
-            border-radius: 50%;
-            border: none;
-            background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-            cursor: pointer;
-            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border-radius: 25px;
+            background: rgba(50, 50, 50, 0.7);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
             border: 1px solid rgba(255,255,255,0.1);
-        }
-
-        /* 主按钮 */
-        #fab-main {
-            background: #fff;
-            color: #000;
-            font-size: 24px;
-            width: 55px;
-            height: 55px;
-        }
-
-        /* 菜单按钮 (默认缩放隐藏) */
-        .fab-menu-item {
-            transform: scale(0) translateY(20px);
-            opacity: 0;
-            position: absolute;
-            bottom: 0;
-        }
-
-        /* 展开状态 */
-        #fab-container.expanded .fab-menu-item {
-            transform: scale(1) translateY(0);
-            opacity: 1;
-            position: relative;
-        }
-        
-        #fab-container.expanded #fab-main {
-            transform: rotate(45deg);
-            background: #333;
-            color: #fff;
-        }
-
-        /* 简单的工具提示 */
-        .fab-menu-item::after {
-            content: attr(data-tooltip);
-            position: absolute;
-            right: 60px;
-            background: rgba(0,0,0,0.7);
             color: white;
-            padding: 4px 8px;
-            border-radius: 6px;
-            font-size: 12px;
-            white-space: nowrap;
+            z-index: 1000; /* 最高层级 */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             opacity: 0;
             pointer-events: none;
-            transition: opacity 0.2s;
+            transform: translateY(20px);
         }
-        #fab-container.expanded .fab-menu-item:active::after {
+
+        #fab.visible {
             opacity: 1;
+            pointer-events: auto;
+            transform: translateY(0);
+        }
+
+        #fab:active {
+            transform: scale(0.9);
+            background: rgba(80, 80, 80, 0.9);
+        }
+
+        /* 简单的 SVG 图标 */
+        #fab svg {
+            width: 24px;
+            height: 24px;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
         }
 
     </style>
 </head>
 <body>
 
-    <!-- 启动器主页 -->
-    <div id="launcher">
+    <!-- 1. 启动器层 -->
+    <div id="launcher" class="screen-layer">
+        <!-- 时间（装饰用，增加手机感） -->
+        <div style="font-size: 50px; font-weight: 200; color: white; margin-bottom: 60px; text-shadow: 0 2px 10px rgba(0,0,0,0.2);">
+            12:00
+        </div>
+
         <div class="app-grid">
-            <!-- App A -->
-            <div class="app-item" onclick="launchApp('frame-a')">
-                <div class="app-icon app-a"></div>
-                <span class="app-label">EPhone</span>
+            <!-- App A 按钮 -->
+            <div class="app-item" onclick="openApp('app-a')">
+                <div class="app-icon icon-a"></div>
+                <span class="app-name">EPhone</span>
             </div>
-            
-            <!-- App B -->
-            <div class="app-item" onclick="launchApp('frame-b')">
-                <div class="app-icon app-b"></div>
-                <span class="app-label">文件 B</span>
+
+            <!-- App B 按钮 -->
+            <div class="app-item" onclick="openApp('app-b')">
+                <div class="app-icon icon-b"></div>
+                <span class="app-name">世界书</span>
             </div>
         </div>
-        <div style="margin-top: 20px; color: rgba(255,255,255,0.6); font-size: 12px;">My Workspace</div>
     </div>
 
-    <!-- App 容器 (iframe) -->
-    <!-- 请替换下面的 src 地址为你真实的 GitHub Pages 地址 -->
-    
-    <!-- 对应 App A (EPhone) -->
-    <iframe id="frame-a" class="app-frame" src="https://cx3300-1.github.io/ooooka/"></iframe>
-    
-    <!-- 对应 App B (另一个文档) -->
-    <iframe id="frame-b" class="app-frame" src="https://cx3300-1.github.io/sfsfdf/"></iframe>
+    <!-- 2. App A 容器 -->
+    <!-- 把 src 换成你的 EPhone 链接 -->
+    <iframe id="app-a" class="screen-layer app-frame" src="https://cx3300-1.github.io/ooooka/"></iframe>
 
-    <!-- 悬浮控制球 -->
-    <div id="fab-container">
-        <!-- 主按钮 -->
-        <button id="fab-main" class="fab-btn" onclick="toggleFab()">+</button>
-        
-        <!-- 菜单项：退出到主页 -->
-        <button class="fab-btn fab-menu-item" onclick="goHome()" data-tooltip="退出">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
-        </button>
-        
-        <!-- 菜单项：切换 App -->
-        <button class="fab-btn fab-menu-item" onclick="switchApp()" data-tooltip="切换 App">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
-        </button>
+    <!-- 3. App B 容器 -->
+    <!-- 把 src 换成你的 第二个 链接 -->
+    <iframe id="app-b" class="screen-layer app-frame" src="https://cx3300-1.github.io/sfsfdf/"></iframe>
+
+    <!-- 4. 悬浮操作球 (点击切换/长按退出) -->
+    <div id="fab" onclick="handleFabClick()">
+        <!-- 默认显示“切换”图标 -->
+        <svg id="icon-switch" viewBox="0 0 24 24"><path d="M20 7h-9"/><path d="M14 17H5"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/></svg>
     </div>
 
     <script>
-        let currentAppId = null;
-        const fabContainer = document.getElementById('fab-container');
+        let currentApp = null;
+        let pressTimer = null;
         const launcher = document.getElementById('launcher');
+        const fab = document.getElementById('fab');
 
-        // 启动 App
-        function launchApp(frameId) {
-            // 隐藏启动器
+        // 打开应用
+        function openApp(appId) {
+            currentApp = appId;
+            
+            // 动画：隐藏启动器
             launcher.classList.add('hidden');
             
-            // 显示目标 iframe
-            document.querySelectorAll('.app-frame').forEach(frame => {
-                frame.classList.remove('active');
-            });
-            const targetFrame = document.getElementById(frameId);
-            if(targetFrame) {
-                targetFrame.classList.add('active');
-                currentAppId = frameId;
-            }
+            // 激活 iframe
+            document.querySelectorAll('.app-frame').forEach(el => el.classList.remove('active'));
+            document.getElementById(appId).classList.add('active');
 
             // 显示悬浮球
-            fabContainer.classList.add('visible');
-            // 收起菜单
-            fabContainer.classList.remove('expanded');
+            fab.classList.add('visible');
         }
 
-        // 返回主页
+        // 悬浮球点击逻辑：单击切换 App
+        function handleFabClick() {
+            if (!currentApp) return;
+
+            // 简单的切换逻辑：如果是A就去B，是B就去A
+            const nextApp = currentApp === 'app-a' ? 'app-b' : 'app-a';
+            
+            // 切换动画：当前 App 变淡，新 App 浮现
+            document.getElementById(currentApp).classList.remove('active');
+            setTimeout(() => {
+                document.getElementById(nextApp).classList.add('active');
+            }, 50); // 极短延迟确保 z-index 切换流畅
+            
+            currentApp = nextApp;
+        }
+
+        // 双击悬浮球：回到桌面 (退出 App)
+        fab.addEventListener('dblclick', (e) => {
+            e.stopPropagation(); // 防止触发单击
+            goHome();
+        });
+
+        // 也可以选择长按退出（移动端双击有时有延迟，长按更符合直觉）
+        fab.addEventListener('touchstart', () => {
+            pressTimer = setTimeout(goHome, 800); // 长按 800ms 退出
+        });
+        fab.addEventListener('touchend', () => {
+            clearTimeout(pressTimer);
+        });
+
         function goHome() {
             // 隐藏所有 iframe
-            document.querySelectorAll('.app-frame').forEach(frame => {
-                frame.classList.remove('active');
-            });
+            document.querySelectorAll('.app-frame').forEach(el => el.classList.remove('active'));
             
             // 显示启动器
             launcher.classList.remove('hidden');
             
             // 隐藏悬浮球
-            fabContainer.classList.remove('visible');
-            fabContainer.classList.remove('expanded');
+            fab.classList.remove('visible');
             
-            currentAppId = null;
+            currentApp = null;
         }
-
-        // 切换 App (在 A 和 B 之间切换)
-        function switchApp() {
-            if (!currentAppId) return;
-
-            const nextAppId = currentAppId === 'frame-a' ? 'frame-b' : 'frame-a';
-            launchApp(nextAppId);
-        }
-
-        // 展开/收起悬浮球菜单
-        function toggleFab() {
-            fabContainer.classList.toggle('expanded');
-        }
-
-        // 简单的触摸防误触
-        document.addEventListener('gesturestart', function (e) {
-            e.preventDefault();
-        });
     </script>
 </body>
 </html>
