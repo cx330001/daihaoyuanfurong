@@ -16,7 +16,7 @@
   <meta name="theme-color" content="#f0f2f5">
     
     <style>
-        /* --- 你的原始 CSS (保持布局不变) --- */
+        /* --- 你的原始 CSS --- */
         :root {
             --screen-width: 350px;
             --screen-height: 650px;
@@ -37,18 +37,6 @@
             overflow: hidden; 
         }
 
-     #home-screen {
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-start;
-            align-items: center;
-            box-sizing: border-box;
-            background-size: cover;
-            background-position: center;
-            padding-left: 20px;
-            padding-right: 20px;
-        }
-
         /* --- 手机屏幕容器 --- */
         #phone-screen {
             width: 100%;
@@ -62,57 +50,7 @@
             background-position: center;
         }
 
-        /* --- 状态栏 --- */
-        #status-bar {
-            padding: 0 20px;
-            height: 44px;
-            width: 100%;
-            color: white;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            position: absolute;
-            top: 0;
-            left: 0;
-            box-sizing: border-box;
-            z-index: 200; /* 状态栏始终在最上层 */
-            text-shadow: 0 1px 3px rgba(0,0,0,0.4);
-            font-size: 14px;
-            font-weight: 600;
-            pointer-events: none;
-        }
-
-        .battery-container {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .battery-icon {
-            width: 25px;
-            height: 12px;
-            border: 1px solid white;
-            border-radius: 3px;
-            position: relative;
-            padding: 1px;
-        }
-
-        .battery-icon::after {
-            content: '';
-            position: absolute;
-            right: -3px;
-            top: 3px;
-            width: 2px;
-            height: 6px;
-            background-color: white;
-            border-radius: 0 1px 1px 0;
-        }
-
-        .battery-level {
-            height: 100%;
-            background-color: white;
-            border-radius: 1px;
-        }
+        /* --- 状态栏 CSS 已删除 --- */
 
         /* --- 屏幕通用 --- */
         .screen {
@@ -129,7 +67,8 @@
 
         /* --- 主屏幕布局 --- */
         #home-screen {
-            padding-top: calc(44px + env(safe-area-inset-top));
+            /* 修改：去掉了原有的 44px 状态栏预留高度，改为 20px 基础间距 */
+            padding-top: calc(20px + env(safe-area-inset-top));
             padding-bottom: 20px;
             box-sizing: border-box;
             z-index: 10;
@@ -228,20 +167,18 @@
             filter: brightness(0.8);
         }
 
-        /* --- App 容器样式 (已修改：移除padding，全屏覆盖) --- */
+        /* --- App 容器样式 --- */
         .app-window {
             width: 100%;
             height: 100%;
             position: absolute;
             top: 0;
             left: 0;
-            /* 确保背景纯白，遮挡主屏幕 */
             background-color: #fff; 
             z-index: 50; 
             display: none; 
             flex-direction: column;
-            /* 重点修改：移除所有 padding，让 iframe 填满整个屏幕 */
-            padding: 0; 
+            padding: 0; /* 无内边距，全屏显示 */
             box-sizing: border-box;
             
             transform: scale(0.9);
@@ -260,7 +197,7 @@
             width: 100%;
             height: 100%;
             border: none;
-            display: block; /* 防止出现行内元素的空隙 */
+            display: block;
             background-color: #fff;
         }
 
@@ -304,16 +241,7 @@
 
 <div id="phone-screen">
     
-    <!-- 状态栏 -->
-    <div id="status-bar"> 
-      <span id="status-bar-time">12:00</span>
-      <div id="status-bar-battery" class="battery-container"> 
-        <span class="battery-text">100%</span>
-        <div class="battery-icon">
-          <div class="battery-level" style="width: 100%;"></div>
-        </div>
-      </div>
-    </div>
+    <!-- 状态栏 HTML 已移除 -->
 
     <!-- 主屏幕 (Home Screen) -->
     <div id="home-screen" class="screen">
@@ -360,7 +288,7 @@
     <!-- App B 页面 (全屏 Iframe) -->
     <div id="app-b" class="app-window">
         <!-- 替换为你需要的链接 -->
-        <iframe src="https://cx3300-1.github.io/sfsfdf/" class="app-iframe" title="App B"></iframe>
+        <iframe src="https://kitty-0v0.github.io/-k-/" class="app-iframe" title="App B"></iframe>
     </div>
 
     <!-- 悬浮按钮 -->
@@ -369,15 +297,7 @@
 </div>
 
 <script>
-    // --- 1. 时间更新 ---
-    function updateTime() {
-        const now = new Date();
-        const hours = String(now.getHours()).padStart(2, '0');
-        const minutes = String(now.getMinutes()).padStart(2, '0');
-        document.getElementById('status-bar-time').innerText = `${hours}:${minutes}`;
-    }
-    setInterval(updateTime, 1000);
-    updateTime();
+    // --- 1. 基础逻辑：时间更新函数已移除 ---
 
     // --- 2. App 切换逻辑 ---
     const homeScreen = document.getElementById('home-screen');
