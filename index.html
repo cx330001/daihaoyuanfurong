@@ -1,20 +1,32 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="apple-mobile-web-app-capable" content="yes">
+
+ <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>EPhone</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="apple-touch-icon" href="https://s3plus.meituan.net/opapisdk/op_ticket_885190757_1758510900942_qdqqd_djw0z2.jpeg">
+  <link rel="manifest" href="manifest.json">
+  <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="EPhone">
   <meta name="mobile-web-app-capable" content="yes">
   <link rel="icon" type="image/png" href="https://s3plus.meituan.net/opapisdk/op_ticket_885190757_1756312261242_qdqqd_g0eriz.jpeg">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#f0f2f5">
     <title>PWA Demo</title>
     <style>
         /* --- 你的原始 CSS (保持不变) --- */
- :root { --screen-width: 350px; --screen-height: 650px; --secondary-bg: #ffffff; --border-color: #e0e0e0; --text-primary: #1f1f1f; --text-secondary: #8a8a8a; --accent-color: #007bff; }
-        html {
+        :root {
+            --screen-width: 350px;
+            --screen-height: 650px;
+            --border-color: #e0e0e0;
+            --text-primary: #1f1f1f;
+        }
+
+          html {
             -webkit-text-size-adjust: 100%;
             height: 100%; 
         }
@@ -26,14 +38,50 @@
             height: 100%; 
             overflow: hidden; 
         }
+
+     #home-screen {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+            box-sizing: border-box;
+            background-size: cover;
+            background-position: center;
+            padding-left: 20px;
+            padding-right: 20px;
+        }
+
+        /* --- 手机屏幕容器 --- */
         #phone-screen {
             width: 100%;
-            height: 100vh; 
+            height: 100vh;
             position: relative;
             overflow: hidden;
             display: flex;
             flex-direction: column;
-            background-color: #ffffff; 
+            background: linear-gradient(135deg, #6DD5FA, #2980B9);
+            background-size: cover;
+            background-position: center;
+        }
+
+        /* --- 状态栏 --- */
+        #status-bar {
+            padding: 0 20px;
+            height: 44px;
+            width: 100%;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: absolute;
+            top: 0;
+            left: 0;
+            box-sizing: border-box;
+            z-index: 200; /* 提高层级，确保在App之上 */
+            text-shadow: 0 1px 3px rgba(0,0,0,0.4);
+            font-size: 14px;
+            font-weight: 600;
+            pointer-events: none; /* 让点击穿透状态栏 */
         }
 
         .battery-container {
@@ -494,3 +542,18 @@
 
         if (currentApp) {
             // 如果在 App 里，点击退出
+            goHome();
+        } else {
+            // 如果在桌面，做一个简单的缩放效果表示按下
+            floatBtn.style.transform = 'scale(0.8)';
+            setTimeout(() => floatBtn.style.transform = 'scale(1)', 100);
+        }
+    }
+
+    // 绑定事件
+    floatBtn.addEventListener('mousedown', dragStart);
+    floatBtn.addEventListener('touchstart', dragStart, { passive: false });
+
+</script>
+</body>
+</html>
