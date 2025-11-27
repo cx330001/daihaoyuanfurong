@@ -16,7 +16,7 @@
   <meta name="theme-color" content="#f0f2f5">
     
     <style>
-        /* --- 你的原始 CSS --- */
+        /* --- 你的原始 CSS (完全保留) --- */
         :root {
             --screen-width: 350px;
             --screen-height: 650px;
@@ -67,7 +67,6 @@
 
         /* --- 主屏幕布局 --- */
         #home-screen {
-            /* 修改：去掉了原有的 44px 状态栏预留高度，改为 20px 基础间距 */
             padding-top: calc(20px + env(safe-area-inset-top));
             padding-bottom: 20px;
             box-sizing: border-box;
@@ -167,7 +166,7 @@
             filter: brightness(0.8);
         }
 
-        /* --- App 容器样式 --- */
+        /* --- App 容器样式 (已修改：实现“不刷新”的关键) --- */
         .app-window {
             width: 100%;
             height: 100%;
@@ -176,18 +175,26 @@
             left: 0;
             background-color: #fff; 
             z-index: 50; 
-            display: none; 
+            
+            /* 修改点 1: 始终保持 flex 布局，不用 display: none */
+            display: flex; 
             flex-direction: column;
-            padding: 0; /* 无内边距，全屏显示 */
+            padding: 0; 
             box-sizing: border-box;
+            
+            /* 修改点 2: 默认状态改为“隐身”且“不可点击” */
+            visibility: hidden;
+            pointer-events: none;
             
             transform: scale(0.9);
             opacity: 0;
-            transition: transform 0.3s ease, opacity 0.3s ease;
+            transition: transform 0.3s ease, opacity 0.3s ease, visibility 0.3s;
         }
 
         .app-window.active {
-            display: flex;
+            /* 修改点 3: 激活时可见并可点击 */
+            visibility: visible;
+            pointer-events: auto;
             transform: scale(1);
             opacity: 1;
         }
@@ -241,20 +248,15 @@
 
 <div id="phone-screen">
     
-    <!-- 状态栏 HTML 已移除 -->
-
-    <!-- 主屏幕 (Home Screen) -->
     <div id="home-screen" class="screen">
       <div id="home-screen-pages-container">
         <div id="home-screen-pages">
           <div class="home-screen-page">
             <div id="main-content-area">
               
-              <!-- 桌面布局 -->
               <div id="desktop-layout">
                 <div id="desktop-app-container">
                   
-                  <!-- App A 入口 -->
                   <div class="desktop-app-icon" onclick="openApp('a')">
                     <div class="icon-bg-desktop">
                       <img src="https://via.placeholder.com/100/007bff/ffffff?text=A" alt="App A">
@@ -262,7 +264,6 @@
                     <span class="label">应用 A</span>
                   </div>
 
-                  <!-- App B 入口 -->
                   <div class="desktop-app-icon" onclick="openApp('b')">
                     <div class="icon-bg-desktop">
                       <img src="https://via.placeholder.com/100/28a745/ffffff?text=B" alt="App B">
@@ -279,27 +280,20 @@
       </div>
     </div>
 
-    <!-- App A 页面 (全屏 Iframe) -->
     <div id="app-a" class="app-window">
-        <!-- 替换为你需要的链接 -->
         <iframe src="https://cx3300-1.github.io/ooooka/" class="app-iframe" title="App A"></iframe>
     </div>
 
-    <!-- App B 页面 (全屏 Iframe) -->
     <div id="app-b" class="app-window">
-        <!-- 替换为你需要的链接 -->
-        <iframe src="https://kitty-0v0.github.io/-k-/" class="app-iframe" title="App B"></iframe>
+        <iframe src="https://cx3300-1.github.io/sfsfdf/" class="app-iframe" title="App B"></iframe>
     </div>
 
-    <!-- 悬浮按钮 -->
     <div id="floating-btn"></div>
 
 </div>
 
 <script>
-    // --- 1. 基础逻辑：时间更新函数已移除 ---
-
-    // --- 2. App 切换逻辑 ---
+    // --- App 切换逻辑 (已修改优化) ---
     const homeScreen = document.getElementById('home-screen');
     const appA = document.getElementById('app-a');
     const appB = document.getElementById('app-b');
@@ -316,9 +310,9 @@
         }
 
         if (activeApp) {
-            activeApp.style.display = 'flex';
-            // 延迟一点点加 class 触发 transition
-            setTimeout(() => activeApp.classList.add('active'), 10);
+            // 修改：不再设置 style.display = 'flex'，因为它一直都是 flex
+            // 只需要加 active 类，通过 visibility 和 opacity 来显示
+            activeApp.classList.add('active');
             
             // 主屏幕缩小并变透明
             homeScreen.style.transform = 'scale(0.95)';
@@ -331,12 +325,11 @@
 
         const activeApp = currentApp === 'a' ? appA : appB;
         
-        // 移除 active 触发缩小消失动画
+        // 修改：移除 active 类即可，CSS transition 处理淡出
         activeApp.classList.remove('active');
         
-        setTimeout(() => {
-            activeApp.style.display = 'none';
-        }, 300);
+        // 修改：删除了 setTimeout 中设置 display: none 的代码
+        // 这样 iframe 依然在后台运行，数据不会丢失
 
         // 恢复主屏幕
         homeScreen.style.transform = 'scale(1)';
@@ -345,7 +338,7 @@
         currentApp = null;
     }
 
-    // --- 3. 悬浮按钮逻辑 (拖拽 + 点击) ---
+    // --- 悬浮按钮逻辑 (保持不变) ---
     const floatBtn = document.getElementById('floating-btn');
     let isDragging = false;
     let startX, startY, initialLeft, initialTop;
@@ -363,7 +356,6 @@
         
         const rect = floatBtn.getBoundingClientRect();
         const parentRect = document.getElementById('phone-screen').getBoundingClientRect();
-        // 计算相对于 phone-screen 的偏移
         initialLeft = rect.left - parentRect.left;
         initialTop = rect.top - parentRect.top;
 
@@ -420,14 +412,12 @@
 
         floatBtn.style.transition = 'all 0.3s ease';
         
-        // 左右吸附
         if (currentLeft + btnWidth / 2 < screenWidth / 2) {
             floatBtn.style.left = '10px';
         } else {
             floatBtn.style.left = (screenWidth - btnWidth - 10) + 'px';
         }
 
-        // 上下边界限制
         if (currentTop < 50) floatBtn.style.top = '50px';
         if (currentTop > screenHeight - 80) floatBtn.style.top = (screenHeight - 80) + 'px';
 
@@ -450,7 +440,7 @@
     floatBtn.addEventListener('mousedown', dragStart);
     floatBtn.addEventListener('touchstart', dragStart, { passive: false });
 
-    // --- 4. Service Worker 注册 ---
+    // --- Service Worker 注册 ---
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
             navigator.serviceWorker.register('sw.js')
