@@ -2,224 +2,521 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <!-- 核心：viewport-fit=cover 是必须的 -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>My OS</title>
-    
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="mobile-web-app-capable" content="yes">
-    
+    <meta name="theme-color" content="#f0f2f5">
+    <title>PWA Demo</title>
     <style>
-        /* 1. 根元素必须占满，且背景设为黑，防止白边 */
+        /* --- 你的原始 CSS (保持不变) --- */
+        :root {
+            --screen-width: 350px;
+            --screen-height: 650px;
+            --border-color: #e0e0e0;
+            --text-primary: #1f1f1f;
+        }
+
         html, body {
             margin: 0;
             padding: 0;
-            width: 100%;
             height: 100%;
             overflow: hidden;
-            background-color: #000; 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #f0f2f5;
+            -webkit-text-size-adjust: 100%;
+            /* 禁止选中文字，更像App */
+            user-select: none;
+            -webkit-user-select: none;
         }
 
-        /* 2. 启动器界面 */
-        #launcher {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            /* 背景图：这里随便找了一张，你可以换成你喜欢的 */
-            background: url('https://images.unsplash.com/photo-1620121692029-d088224ddc74?q=80&w=2532&auto=format&fit=crop') no-repeat center center;
-            background-size: cover;
+        /* --- 手机屏幕容器 --- */
+        #phone-screen {
+            width: 100%;
+            height: 100vh;
+            position: relative;
+            overflow: hidden;
             display: flex;
             flex-direction: column;
-            justify-content: center; /* 垂直居中 */
-            align-items: center;
-            z-index: 10;
-            transition: opacity 0.3s ease, transform 0.3s ease;
+            background: linear-gradient(135deg, #6DD5FA, #2980B9);
+            background-size: cover;
+            background-position: center;
         }
 
-        /* 3. 应用容器 (IFRAME) - 绝对全屏修复 */
-        .app-frame {
-            display: block;
-            position: fixed; /* 必须用 fixed，否则会被Safari推上去 */
+        /* --- 状态栏 --- */
+        #status-bar {
+            padding: 0 20px;
+            height: 44px;
+            width: 100%;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: absolute;
             top: 0;
             left: 0;
-            right: 0;
-            bottom: 0; /* 强行拉到底 */
-            width: 100vw;
-            height: 100vh; /* 强行占满视口高度 */
-            border: none;
-            background: #000; /* 加载时背景为黑 */
-            z-index: 0;
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.3s ease;
-            
-            /* 关键：让 iframe 内部滚动流畅 */
-            -webkit-overflow-scrolling: touch;
+            box-sizing: border-box;
+            z-index: 200; /* 提高层级，确保在App之上 */
+            text-shadow: 0 1px 3px rgba(0,0,0,0.4);
+            font-size: 14px;
+            font-weight: 600;
+            pointer-events: none; /* 让点击穿透状态栏 */
         }
 
-        .app-frame.active {
-            z-index: 20;
-            opacity: 1;
-            visibility: visible;
+        .battery-container {
+            display: flex;
+            align-items: center;
+            gap: 5px;
         }
 
-        #launcher.hidden {
-            opacity: 0;
-            pointer-events: none;
-            transform: scale(1.1);
+        .battery-icon {
+            width: 25px;
+            height: 12px;
+            border: 1px solid white;
+            border-radius: 3px;
+            position: relative;
+            padding: 1px;
         }
 
-        /* 图标样式 (仿 EPhone) */
+        .battery-icon::after {
+            content: '';
+            position: absolute;
+            right: -3px;
+            top: 3px;
+            width: 2px;
+            height: 6px;
+            background-color: white;
+            border-radius: 0 1px 1px 0;
+        }
+
+        .battery-level {
+            height: 100%;
+            background-color: white;
+            border-radius: 1px;
+        }
+
+        /* --- 屏幕通用 --- */
+        .screen {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.3s;
+        }
+
+        /* --- 主屏幕布局 --- */
+        #home-screen {
+            padding-top: calc(44px + env(safe-area-inset-top));
+            padding-bottom: 20px;
+            box-sizing: border-box;
+            z-index: 10;
+        }
+
+        #home-screen-pages-container {
+            flex-grow: 1;
+            width: 100%;
+            height: 100%;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #home-screen-pages {
+            width: 100%;
+            height: 100%;
+            display: flex;
+        }
+
+        .home-screen-page {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center; 
+        }
+
+        #main-content-area {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* --- 桌面图标样式 --- */
+        #desktop-layout {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            padding: 0 20px;
+            box-sizing: border-box;
+        }
+
+        #desktop-app-container {
+            display: flex;
+            gap: 30px;
+        }
+
         .desktop-app-icon {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
             cursor: pointer;
-            margin: 20px;
-            transition: transform 0.1s;
+            text-align: center;
+            width: 60px;
+            -webkit-tap-highlight-color: transparent;
         }
-        .desktop-app-icon:active { transform: scale(0.9); }
 
-        .icon-bg {
-            width: 65px; height: 65px;
-            border-radius: 16px;
+        .icon-bg-desktop {
+            width: 60px;
+            height: 60px;
+            border-radius: 14px;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
             overflow: hidden;
-            background: rgba(255,255,255,0.2);
-            backdrop-filter: blur(10px);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-        }
-        .icon-bg img { width: 100%; height: 100%; object-fit: cover; }
-        .label { color: white; font-size: 14px; text-shadow: 0 1px 3px rgba(0,0,0,0.8); font-weight: 500; }
-
-        /* 应用列表容器 */
-        #app-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 20px;
+            transition: transform 0.1s ease;
         }
 
-        /* 悬浮按钮 (FAB) - 位置要避开 Home Bar */
-        #fab-control {
-            position: fixed;
-            bottom: calc(20px + env(safe-area-inset-bottom)); /* 智能避开底部黑条 */
-            right: 20px;
-            z-index: 100;
-            display: none;
+        .icon-bg-desktop img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .desktop-app-icon .label {
+            color: white;
+            font-size: 13px;
+            font-weight: 500;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            width: 100%;
+        }
+
+        .desktop-app-icon:active .icon-bg-desktop {
+            transform: scale(0.9);
+            filter: brightness(0.8);
+        }
+
+        /* =========================================
+           新增功能样式 (App视图 & 悬浮按钮)
+           ========================================= */
+
+        /* App 容器样式 */
+        .app-window {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            background-color: #fff;
+            z-index: 50; /* 比主屏幕高 */
+            display: none; /* 默认隐藏 */
             flex-direction: column;
-            gap: 15px;
+            padding-top: calc(44px + env(safe-area-inset-top)); /* 避开状态栏 */
+            box-sizing: border-box;
+            
+            /* 简单的进入动画 */
+            transform: scale(0.9);
+            opacity: 0;
+            transition: transform 0.3s ease, opacity 0.3s ease;
         }
-        #fab-control.visible { display: flex; }
 
-        .fab-btn {
-            width: 50px; height: 50px;
-            border-radius: 50%;
-            background: rgba(30, 30, 30, 0.7);
+        .app-window.active {
+            display: flex;
+            transform: scale(1);
+            opacity: 1;
+        }
+
+        .app-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .app-header {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        /* 悬浮按钮 (Assistive Touch) */
+        #floating-btn {
+            width: 50px;
+            height: 50px;
+            background: rgba(50, 50, 50, 0.6);
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
+            border-radius: 14px; /* iOS 风格 */
+            position: absolute;
+            top: 60%;
+            right: 20px;
+            z-index: 999;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
             border: 1px solid rgba(255,255,255,0.2);
-            color: white;
-            display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-            cursor: pointer;
+            cursor: move;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.3s;
         }
-        .fab-btn svg { width: 24px; height: 24px; stroke: white; stroke-width: 2; }
+
+        #floating-btn::after {
+            content: '';
+            width: 26px;
+            height: 26px;
+            background-color: rgba(255,255,255,0.9);
+            border-radius: 50%;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+        }
+
+        #floating-btn:active {
+            background: rgba(50, 50, 50, 0.8);
+        }
 
     </style>
 </head>
 <body>
 
-    <!-- 桌面 -->
-    <div id="launcher">
-        <!-- 时间小组件 -->
-        <div style="text-align: center; color: white; margin-bottom: 50px; text-shadow: 0 2px 10px rgba(0,0,0,0.5);">
-            <div id="clock" style="font-size: 70px; font-weight: 200; line-height: 1;">12:00</div>
-            <div id="date" style="font-size: 18px; margin-top: 5px; opacity: 0.9;">1月1日 星期一</div>
+<div id="phone-screen">
+    
+    <!-- 状态栏 -->
+    <div id="status-bar"> 
+      <span id="status-bar-time">12:00</span>
+      <div id="status-bar-battery" class="battery-container"> 
+        <span class="battery-text">100%</span>
+        <div class="battery-icon">
+          <div class="battery-level" style="width: 100%;"></div>
         </div>
+      </div>
+    </div>
 
-        <div id="app-grid">
-            <!-- App A -->
-            <div class="desktop-app-icon" onclick="openApp('frame-a')">
-                <div class="icon-bg">
-                    <!-- 请替换这里为你 EPhone 的图标 -->
-                    <img src="https://i.postimg.cc/pXj9h20L/IMG-7275.jpg" alt="EPhone">
-                </div>
-                <span class="label">EPhone</span>
-            </div>
+    <!-- 主屏幕 (Home Screen) -->
+    <div id="home-screen" class="screen">
+      <div id="home-screen-pages-container">
+        <div id="home-screen-pages">
+          <div class="home-screen-page">
+            <div id="main-content-area">
+              
+              <!-- 桌面布局 -->
+              <div id="desktop-layout">
+                <div id="desktop-app-container">
+                  
+                  <!-- App A 入口 -->
+                  <div class="desktop-app-icon" onclick="openApp('a')">
+                    <div class="icon-bg-desktop">
+                      <img src="https://via.placeholder.com/100/007bff/ffffff?text=A" alt="App A">
+                    </div> 
+                    <span class="label">应用 A</span>
+                  </div>
 
-            <!-- App B -->
-            <div class="desktop-app-icon" onclick="openApp('frame-b')">
-                <div class="icon-bg">
-                    <!-- 请替换这里为 App B 的图标 -->
-                    <img src="https://i.postimg.cc/HWf1JKzn/IMG-6435.jpg" alt="App B">
+                  <!-- App B 入口 -->
+                  <div class="desktop-app-icon" onclick="openApp('b')">
+                    <div class="icon-bg-desktop">
+                      <img src="https://via.placeholder.com/100/28a745/ffffff?text=B" alt="App B">
+                    </div> 
+                    <span class="label">应用 B</span>
+                  </div>
+
                 </div>
-                <span class="label">世界书</span>
+              </div>
+
             </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- App A 页面 -->
+    <div id="app-a" class="app-window">
+        <div class="app-content" style="background-color: #f0f8ff;">
+            <div class="app-header" style="color: #007bff;">应用 A</div>
+            <p>这里是 App A 的内容界面。</p>
+            <p style="color: #666; font-size: 14px; margin-top: 20px;">点击悬浮球退出</p>
         </div>
     </div>
 
-    <!-- Iframe 容器：确保填入你的 GitHub 链接 -->
-    <!-- 警告：如果你的 EPhone 页面是在不同域名下，可能会有跨域限制，最好都在 github.io 下 -->
-    <iframe id="frame-a" class="app-frame" src="YOUR_GITHUB_URL_A"></iframe>
-    <iframe id="frame-b" class="app-frame" src="YOUR_GITHUB_URL_B"></iframe>
-
-    <!-- 悬浮球 -->
-    <div id="fab-control">
-        <!-- 切换 -->
-        <div class="fab-btn" onclick="switchApp()" style="background: rgba(0, 122, 255, 0.8);">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
-        </div>
-        <!-- 退出 -->
-        <div class="fab-btn" onclick="exitToHome()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+    <!-- App B 页面 -->
+    <div id="app-b" class="app-window">
+        <div class="app-content" style="background-color: #f0fff4;">
+            <div class="app-header" style="color: #28a745;">应用 B</div>
+            <p>这里是 App B 的内容界面。</p>
+            <p style="color: #666; font-size: 14px; margin-top: 20px;">点击悬浮球退出</p>
         </div>
     </div>
 
-    <script>
-        // 时间更新
-        function updateClock() {
-            const now = new Date();
-            const hours = String(now.getHours()).padStart(2, '0');
-            const minutes = String(now.getMinutes()).padStart(2, '0');
-            document.getElementById('clock').textContent = `${hours}:${minutes}`;
-            const options = { month: 'short', day: 'numeric', weekday: 'short' };
-            document.getElementById('date').textContent = now.toLocaleDateString('zh-CN', options);
-        }
-        setInterval(updateClock, 1000);
-        updateClock();
+    <!-- 悬浮按钮 (用于切换/退出) -->
+    <div id="floating-btn"></div>
 
-        let currentApp = null;
-        const launcher = document.getElementById('launcher');
-        const fab = document.getElementById('fab-control');
+</div>
 
-        function openApp(frameId) {
-            launcher.classList.add('hidden');
-            // 隐藏所有 frame
-            document.querySelectorAll('.app-frame').forEach(f => f.classList.remove('active'));
-            // 显示目标 frame
-            const target = document.getElementById(frameId);
-            if(target) {
-                target.classList.add('active');
-                currentApp = frameId;
-            }
-            fab.classList.add('visible');
+<script>
+    // --- 1. 基础逻辑：时间更新 ---
+    function updateTime() {
+        const now = new Date();
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        document.getElementById('status-bar-time').innerText = `${hours}:${minutes}`;
+    }
+    setInterval(updateTime, 1000);
+    updateTime();
+
+    // --- 2. App 切换逻辑 ---
+    const homeScreen = document.getElementById('home-screen');
+    const appA = document.getElementById('app-a');
+    const appB = document.getElementById('app-b');
+    let currentApp = null; // 'a', 'b', or null (home)
+
+    // 打开 App
+    function openApp(appId) {
+        if (appId === 'a') {
+            appA.style.display = 'flex';
+            // 强制重绘以触发 transition
+            setTimeout(() => appA.classList.add('active'), 10);
+            currentApp = 'a';
+        } else if (appId === 'b') {
+            appB.style.display = 'flex';
+            setTimeout(() => appB.classList.add('active'), 10);
+            currentApp = 'b';
+        }
+        
+        // 主屏幕视觉上后退一点
+        homeScreen.style.transform = 'scale(0.95)';
+        homeScreen.style.opacity = '0';
+    }
+
+    // 回到桌面 (退出 App)
+    function goHome() {
+        if (!currentApp) return; // 已经在桌面就不操作
+
+        const activeApp = currentApp === 'a' ? appA : appB;
+        
+        // 动画隐藏 App
+        activeApp.classList.remove('active');
+        
+        // 动画结束后隐藏 DOM
+        setTimeout(() => {
+            activeApp.style.display = 'none';
+        }, 300);
+
+        // 恢复桌面
+        homeScreen.style.transform = 'scale(1)';
+        homeScreen.style.opacity = '1';
+        
+        currentApp = null;
+    }
+
+    // --- 3. 悬浮按钮逻辑 (拖拽 + 点击) ---
+    const floatBtn = document.getElementById('floating-btn');
+    let isDragging = false;
+    let startX, startY, initialLeft, initialTop;
+    let moveThreshold = 0; // 用于区分点击和拖拽
+
+    // 触摸开始 / 鼠标按下
+    function dragStart(e) {
+        isDragging = false;
+        moveThreshold = 0;
+        
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+        startX = clientX;
+        startY = clientY;
+        
+        const rect = floatBtn.getBoundingClientRect();
+        // 获取相对于父容器的位置
+        initialLeft = floatBtn.offsetLeft;
+        initialTop = floatBtn.offsetTop;
+
+        // 绑定移动和结束事件
+        if (e.type === 'touchstart') {
+            document.addEventListener('touchmove', dragMove, { passive: false });
+            document.addEventListener('touchend', dragEnd);
+        } else {
+            document.addEventListener('mousemove', dragMove);
+            document.addEventListener('mouseup', dragEnd);
+        }
+    }
+
+    // 拖动中
+    function dragMove(e) {
+        e.preventDefault(); // 防止页面滚动
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+        const dx = clientX - startX;
+        const dy = clientY - startY;
+        
+        // 如果移动距离很小，不算拖拽
+        moveThreshold += Math.abs(dx) + Math.abs(dy);
+        if (moveThreshold > 5) isDragging = true;
+
+        floatBtn.style.left = `${initialLeft + dx}px`;
+        floatBtn.style.top = `${initialTop + dy}px`;
+        // 清除 right 定位，改用 left
+        floatBtn.style.right = 'auto'; 
+    }
+
+    // 拖动结束
+    function dragEnd() {
+        document.removeEventListener('touchmove', dragMove);
+        document.removeEventListener('touchend', dragEnd);
+        document.removeEventListener('mousemove', dragMove);
+        document.removeEventListener('mouseup', dragEnd);
+
+        // 如果不是拖拽（即点击），执行功能
+        if (!isDragging) {
+            handleBtnClick();
+        } else {
+            // 吸附边缘逻辑 (可选)
+            snapToEdge();
+        }
+    }
+
+    // 简单的吸附边缘动画
+    function snapToEdge() {
+        const screenWidth = document.body.clientWidth;
+        const btnRect = floatBtn.getBoundingClientRect();
+        const btnCenter = btnRect.left + btnRect.width / 2;
+
+        floatBtn.style.transition = 'all 0.3s ease';
+        
+        // 吸附到左右两侧
+        if (btnCenter < screenWidth / 2) {
+            floatBtn.style.left = '10px';
+        } else {
+            floatBtn.style.left = (screenWidth - btnRect.width - 10) + 'px';
         }
 
-        function exitToHome() {
-            launcher.classList.remove('hidden');
-            document.querySelectorAll('.app-frame').forEach(f => f.classList.remove('active'));
-            fab.classList.remove('visible');
-            currentApp = null;
-        }
+        // 限制上下边界
+        let currentTop = parseFloat(floatBtn.style.top);
+        if (currentTop < 50) floatBtn.style.top = '50px';
+        if (currentTop > document.body.clientHeight - 80) floatBtn.style.top = (document.body.clientHeight - 80) + 'px';
 
-        function switchApp() {
-            if(!currentApp) return;
-            const nextApp = currentApp === 'frame-a' ? 'frame-b' : 'frame-a';
-            document.getElementById(currentApp).classList.remove('active');
-            document.getElementById(nextApp).classList.add('active');
-            currentApp = nextApp;
-        }
-    </script>
-</body>
-</html>
+        // 动画结束后移除 transition 以便下次拖拽更跟手
+        setTimeout(() => {
+            floatBtn.style.transition = 'opacity 0.3s';
+        }, 300);
+    }
+
+    // 悬浮球点击逻辑
+    function handleBtnClick() {
+        // 轻触震动反馈
+        if (navigator.vibrate) navigator.vibrate(50);
+
+        if (currentApp) {
+            // 如果在 App 里，点击退出
