@@ -17,14 +17,18 @@
             -webkit-tap-highlight-color: transparent;
         }
 
-        body, html {
+        /* 关键修复：使用 fixed 定位锁定视口，防止出现滚动条和底部空白 */
+        html, body {
             margin: 0;
             padding: 0;
             width: 100%;
             height: 100%;
             overflow: hidden;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             background-color: #f0f2f5;
+            position: fixed; /* 强制固定，解决iOS弹性滚动导致的空白 */
+            top: 0;
+            left: 0;
+            overscroll-behavior: none; /* 禁止橡皮筋效果 */
         }
 
         /* --- 1. 启动器主屏幕 (Home Screen) --- */
@@ -40,6 +44,7 @@
             justify-content: center;
             z-index: 10;
             transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s;
+            /* 背景样式，可根据喜好修改 */
             background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
         }
 
@@ -92,43 +97,40 @@
         }
 
         /* --- 2. iframe 容器 --- */
+        /* 关键修复：绝对定位撑满父容器，不留缝隙 */
         .app-frame {
             position: absolute;
             top: 0;
             left: 0;
+            right: 0;
+            bottom: 0;
             width: 100%;
             height: 100%;
             border: none;
             background-color: #fff;
-            /* 关键：默认隐藏，通过 active 类显示 */
             opacity: 0;
             visibility: hidden;
             z-index: 1; 
             transition: opacity 0.3s ease;
+            display: block; /* 消除iframe底部的默认间隙 */
         }
 
         .app-frame.active {
             opacity: 1;
             visibility: visible;
-            z-index: 5; /* 在 launcher 之下(10)，但在非active frame 之上 */
-        }
-
-        /* 当启动器隐藏时，active 的 iframe 需要最高的 z-index */
-        body.app-open .app-frame.active {
-            z-index: 20;
+            z-index: 5; 
         }
 
         /* --- 3. 悬浮按钮 (FAB) --- */
         #fab-container {
             position: fixed;
-            bottom: 30px;
+            bottom: calc(30px + env(safe-area-inset-bottom)); /* 适配底部安全区 */
             right: 20px;
             z-index: 100;
             display: flex;
             flex-direction: column-reverse;
             align-items: center;
             gap: 15px;
-            /* 默认在主页隐藏，进入应用后显示 */
             opacity: 0;
             pointer-events: none;
             transition: opacity 0.3s;
@@ -143,9 +145,11 @@
             width: 56px;
             height: 56px;
             border-radius: 50%;
-            background-color: #333;
+            background-color: rgba(30, 30, 30, 0.8); /* 半透明黑，减少遮挡 */
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
             color: white;
-            border: none;
+            border: 1px solid rgba(255,255,255,0.1);
             box-shadow: 0 4px 12px rgba(0,0,0,0.3);
             display: flex;
             align-items: center;
@@ -182,7 +186,8 @@
             height: 48px;
             border-radius: 50%;
             border: none;
-            background-color: white;
+            background-color: rgba(255,255,255,0.9);
+            backdrop-filter: blur(5px);
             color: #333;
             box-shadow: 0 2px 8px rgba(0,0,0,0.15);
             display: flex;
@@ -194,6 +199,7 @@
             position: relative;
         }
         
+        /* 标签提示 */
         .fab-item::after {
             content: attr(data-label);
             position: absolute;
@@ -215,10 +221,8 @@
 
         .fab-item:active {
             transform: scale(0.9);
-            background-color: #f0f0f0;
         }
 
-        /* 简单的图标 SVG */
         svg { width: 24px; height: 24px; fill: currentColor; }
 
     </style>
@@ -227,15 +231,15 @@
 
     <!-- 1. 启动器 (主屏幕) -->
     <div id="launcher-screen">
-        <h2 style="color: white; margin-bottom: 40px; text-shadow: 0 2px 4px rgba(0,0,0,0.2);">我的应用</h2>
+        <h2 style="color: white; margin-bottom: 40px; text-shadow: 0 2px 4px rgba(0,0,0,0.2);">应用启动器</h2>
         <div class="app-grid">
-            <!-- App A 图标 -->
+            <!-- App A -->
             <div class="app-icon-wrapper" onclick="openApp('frame-a')">
                 <div class="app-icon icon-a">A</div>
                 <span class="app-name">应用 A</span>
             </div>
             
-            <!-- App B 图标 -->
+            <!-- App B -->
             <div class="app-icon-wrapper" onclick="openApp('frame-b')">
                 <div class="app-icon icon-b">B</div>
                 <span class="app-name">应用 B</span>
@@ -244,14 +248,14 @@
     </div>
 
     <!-- 2. 应用容器 (Iframe) -->
-    <!-- 注意：这里填入你的真实链接 -->
+    <!-- 请替换这里的 src 为你的实际链接 -->
     <iframe id="frame-a" class="app-frame" src="https://cx3300-1.github.io/ooooka/"></iframe>
     <iframe id="frame-b" class="app-frame" src="https://cx3300-1.github.io/sfsfdf/"></iframe>
 
     <!-- 3. 悬浮按钮 (FAB) -->
     <div id="fab-container" class="fab-container">
         <div class="fab-menu">
-            <button class="fab-item" onclick="goHome()" data-label="主屏幕">
+            <button class="fab-item" onclick="goHome()" data-label="返回主屏幕">
                 <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
             </button>
             <button class="fab-item" onclick="openApp('frame-b')" data-label="切换到 B" style="color: #a18cd1;">B</button>
@@ -268,15 +272,10 @@
         const launcherScreen = document.getElementById('launcher-screen');
         const frames = document.querySelectorAll('.app-frame');
 
-        // 打开指定的应用
         function openApp(frameId) {
-            // 1. 标记 Body 为应用打开状态 (用于显示 FAB，隐藏 Launcher)
             document.body.classList.add('app-open');
-            
-            // 2. 隐藏 Launcher 视觉效果
             launcherScreen.classList.add('hidden');
 
-            // 3. 切换 Iframe 的显示状态
             frames.forEach(frame => {
                 if (frame.id === frameId) {
                     frame.classList.add('active');
@@ -284,19 +283,14 @@
                     frame.classList.remove('active');
                 }
             });
-
-            // 4. 关闭悬浮菜单
             closeMenu();
         }
 
-        // 返回主屏幕
         function goHome() {
             document.body.classList.remove('app-open');
             launcherScreen.classList.remove('hidden');
             
-            // 可选：为了节省资源，你也可以在这里移除 iframe 的 active 类，
-            // 但保留 active 类可以让 iframe 在后台继续保持“最后一次看到的状态”
-            // 这里我们稍微延迟一下移除 active，让转场更自然
+            // 延迟移除 iframe 的 active 状态，保持退出动画平滑
             setTimeout(() => {
                 frames.forEach(frame => frame.classList.remove('active'));
             }, 300);
@@ -304,16 +298,14 @@
             closeMenu();
         }
 
-        // 切换悬浮菜单展开/收起
         function toggleMenu() {
             fabContainer.classList.toggle('menu-open');
             fabMain.classList.toggle('expanded');
             
-            // 切换图标 (菜单 <-> 关闭)
             if (fabMain.classList.contains('expanded')) {
-                fabMain.innerHTML = '<svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>'; // Close X
+                fabMain.innerHTML = '<svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>';
             } else {
-                fabMain.innerHTML = '<svg viewBox="0 0 24 24"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>'; // Menu
+                fabMain.innerHTML = '<svg viewBox="0 0 24 24"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>';
             }
         }
 
@@ -323,7 +315,6 @@
             fabMain.innerHTML = '<svg viewBox="0 0 24 24"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>';
         }
 
-        // 点击 iframe 外部区域（如果存在）关闭菜单
         document.addEventListener('click', (e) => {
             if (!fabContainer.contains(e.target) && fabContainer.classList.contains('menu-open')) {
                 closeMenu();
@@ -332,4 +323,5 @@
     </script>
 </body>
 </html>
+
 
