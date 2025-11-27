@@ -1,266 +1,335 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>沉浸式启动器</title>
+    <title>我的应用集</title>
     
+    <!-- PWA 相关设置 -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#000000">
+    <meta name="theme-color" content="#f0f2f5">
+    
+    <style>
+        /* 全局重置 */
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
 
- <style>
-    /* === 1. 基础重置 === */
-    html {
-        width: 100%; height: 100%;
-        /* 【关键修改】：背景色改成和启动器接近的颜色，绝不能是黑色！
-           这样万一有一像素误差，也看不出来。 */
-        background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
-    }
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #f0f2f5;
+        }
 
-    body { 
-        margin: 0; padding: 0; 
-        width: 100%; height: 100%;
+        /* --- 1. 启动器主屏幕 (Home Screen) --- */
+        #launcher-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s;
+            background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
+        }
+
+        #launcher-screen.hidden {
+            transform: scale(1.1);
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .app-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 40px;
+            padding: 20px;
+        }
+
+        .app-icon-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+
+        .app-icon-wrapper:active {
+            transform: scale(0.95);
+        }
+
+        .app-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            color: white;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .icon-a { background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 99%, #fecfef 100%); }
+        .icon-b { background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%); }
+
+        .app-name {
+            font-size: 14px;
+            color: #333;
+            font-weight: 500;
+            text-shadow: 0 1px 2px rgba(255,255,255,0.5);
+        }
+
+        /* --- 2. iframe 容器 --- */
+        .app-frame {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+            background-color: #fff;
+            /* 关键：默认隐藏，通过 active 类显示 */
+            opacity: 0;
+            visibility: hidden;
+            z-index: 1; 
+            transition: opacity 0.3s ease;
+        }
+
+        .app-frame.active {
+            opacity: 1;
+            visibility: visible;
+            z-index: 5; /* 在 launcher 之下(10)，但在非active frame 之上 */
+        }
+
+        /* 当启动器隐藏时，active 的 iframe 需要最高的 z-index */
+        body.app-open .app-frame.active {
+            z-index: 20;
+        }
+
+        /* --- 3. 悬浮按钮 (FAB) --- */
+        #fab-container {
+            position: fixed;
+            bottom: 30px;
+            right: 20px;
+            z-index: 100;
+            display: flex;
+            flex-direction: column-reverse;
+            align-items: center;
+            gap: 15px;
+            /* 默认在主页隐藏，进入应用后显示 */
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+
+        body.app-open #fab-container {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .fab-main {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background-color: #333;
+            color: white;
+            border: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            cursor: pointer;
+            transition: transform 0.3s;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .fab-main.expanded {
+            transform: rotate(45deg);
+            background-color: #ff3b30;
+        }
+
+        .fab-menu {
+            display: flex;
+            flex-direction: column-reverse;
+            gap: 15px;
+            opacity: 0;
+            transform: translateY(20px) scale(0.8);
+            pointer-events: none;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .fab-container.menu-open .fab-menu {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+            pointer-events: auto;
+        }
+
+        .fab-item {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            border: none;
+            background-color: white;
+            color: #333;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            position: relative;
+        }
         
-        /* 恢复全屏，不留余地 */
-        position: absolute;
-        top: 0; left: 0; right: 0; bottom: 0;
+        .fab-item::after {
+            content: attr(data-label);
+            position: absolute;
+            right: 60px;
+            background-color: rgba(0,0,0,0.7);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            white-space: nowrap;
+            opacity: 0;
+            transition: opacity 0.2s;
+            pointer-events: none;
+        }
         
-        background: #f0f2f5; 
-        overflow: hidden; 
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-        overscroll-behavior: none; 
-    }
+        .fab-container.menu-open .fab-item::after {
+            opacity: 1;
+        }
 
-    /* === 2. 【核心魔法】用伪元素画一个“假”的黑色状态栏 === */
-    body::before {
-        content: "";
-        position: fixed;
-        top: 0; left: 0;
-        width: 100%;
-        
-        /* 高度自动适应刘海/灵动岛 */
-        height: env(safe-area-inset-top);
-        
-        /* 强制黑色，实现“分离感” */
-        background-color: #000;
-        
-        /* 确保它压在所有内容之上 */
-        z-index: 9999;
-        
-        /* 给个底部圆角，让分离处看起来更圆润自然 */
-        border-radius: 0 0 16px 16px;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-    }
+        .fab-item:active {
+            transform: scale(0.9);
+            background-color: #f0f0f0;
+        }
 
-    /* === 3. 桌面启动器 (Launcher) === */
-    #launcher {
-        position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-        display: flex; flex-direction: column; 
-        justify-content: flex-start; 
-        align-items: center;
-        
-        /* 背景色铺满全屏 */
-        background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
-        transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), opacity 0.4s;
-        z-index: 1;
+        /* 简单的图标 SVG */
+        svg { width: 24px; height: 24px; fill: currentColor; }
 
-        /* 【修正内容位置】：
-           因为顶部被黑条挡住了，我们需要把内容往下推。
-           env(safe-area-inset-top) 是黑条的高度
-           + 60px 是你想要的标题距离黑条的间距
-        */
-        padding-top: calc(env(safe-area-inset-top) + 60px);
-        
-        box-sizing: border-box;
-    }
-
-    #launcher.hidden { transform: scale(1.1); opacity: 0; pointer-events: none; }
-
-    .app-grid { 
-        display: grid; 
-        grid-template-columns: repeat(2, 1fr); 
-        gap: 40px; 
-        width: 100%; 
-        padding: 0 40px; 
-        box-sizing: border-box; 
-        justify-items: center; 
-    }
-
-    .app-icon {
-        display: flex; flex-direction: column; align-items: center; cursor: pointer;
-        transition: transform 0.2s;
-    }
-    .app-icon:active { transform: scale(0.95); }
-
-    .icon-box {
-        width: 80px; height: 80px; border-radius: 18px;
-        background: white;
-        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-        display: flex; justify-content: center; align-items: center;
-        font-size: 32px; margin-bottom: 10px;
-    }
-    .icon-a { background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 99%); color: white; }
-    .icon-b { background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%); color: white; }
-
-    .app-name { font-size: 14px; color: #333; font-weight: 500; text-shadow: 0 1px 2px rgba(255,255,255,0.5); }
-
-    /* === 4. 应用容器 (App Viewer) === */
-    #app-viewer {
-        position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-        background: #fff; z-index: 2;
-        transform: translateY(100%);
-        transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
-        
-        /* 给应用容器也加上顶部 padding，防止内容被黑条挡住 */
-        padding-top: env(safe-area-inset-top);
-        box-sizing: border-box;
-        
-        display: flex; flex-direction: column;
-    }
-    #app-viewer.active { transform: translateY(0); }
-
-    iframe { 
-        width: 100%; height: 100%; flex: 1; border: none; 
-        display: none; overflow-y: auto; -webkit-overflow-scrolling: touch; 
-    }
-    iframe.show { display: block; }
-
-    /* === 5. 悬浮按钮 (FAB) === */
-    .fab-container {
-        position: absolute; 
-        bottom: 30px; 
-        right: 20px; 
-        z-index: 999;
-        display: none;
-        flex-direction: column-reverse; align-items: center; gap: 15px;
-    }
-    .fab-container.visible { display: flex; }
-
-    .fab-main {
-        width: 56px; height: 56px; border-radius: 50%;
-        background: #333; color: white;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-        display: flex; justify-content: center; align-items: center;
-        font-size: 24px; cursor: pointer; user-select: none;
-        transition: transform 0.3s, background 0.3s;
-        -webkit-tap-highlight-color: transparent;
-    }
-    .fab-main.open { transform: rotate(45deg); background: #ff4757; }
-
-    .fab-menu {
-        display: flex; flex-direction: column; gap: 15px;
-        opacity: 0; transform: translateY(20px) scale(0.8); pointer-events: none;
-        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    }
-    .fab-menu.show { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
-
-    .fab-item {
-        width: 48px; height: 48px; border-radius: 50%;
-        background: white; color: #333;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.15);
-        display: flex; justify-content: center; align-items: center;
-        font-size: 20px; cursor: pointer; position: relative;
-    }
-    .fab-item::after {
-        content: attr(data-label);
-        position: absolute; right: 60px;
-        background: rgba(0,0,0,0.7); color: white; padding: 4px 8px; border-radius: 4px;
-        font-size: 12px; opacity: 0; pointer-events: none; transition: opacity 0.2s; white-space: nowrap;
-    }
-    .fab-item:hover::after { opacity: 1; }
-</style>
-
+    </style>
 </head>
 <body>
 
-    <div id="launcher">
-        <h2 style="color: #fff; margin-bottom: 40px; text-shadow: 0 2px 4px rgba(0,0,0,0.2);">我的空间</h2>
+    <!-- 1. 启动器 (主屏幕) -->
+    <div id="launcher-screen">
+        <h2 style="color: white; margin-bottom: 40px; text-shadow: 0 2px 4px rgba(0,0,0,0.2);">我的应用</h2>
         <div class="app-grid">
-            <div class="app-icon" onclick="openApp('a')">
-                <div class="icon-box icon-a">A</div>
-                <div class="app-name">功能 A</div>
+            <!-- App A 图标 -->
+            <div class="app-icon-wrapper" onclick="openApp('frame-a')">
+                <div class="app-icon icon-a">A</div>
+                <span class="app-name">应用 A</span>
             </div>
             
-            <div class="app-icon" onclick="openApp('b')">
-                <div class="icon-box icon-b">B</div>
-                <div class="app-name">功能 B</div>
+            <!-- App B 图标 -->
+            <div class="app-icon-wrapper" onclick="openApp('frame-b')">
+                <div class="app-icon icon-b">B</div>
+                <span class="app-name">应用 B</span>
             </div>
         </div>
     </div>
 
-    <div id="app-viewer">
-        <iframe id="frame-a" src="" data-src="https://www.bing.com"></iframe>
-        <iframe id="frame-b" src="" data-src="https://example.com"></iframe>
-    </div>
+    <!-- 2. 应用容器 (Iframe) -->
+    <!-- 注意：这里填入你的真实链接 -->
+    <iframe id="frame-a" class="app-frame" src="https://xxx.github.io/xxx/"></iframe>
+    <iframe id="frame-b" class="app-frame" src="https://xxx.github.io/aa/"></iframe>
 
-    <div class="fab-container" id="fabContainer">
-        <div class="fab-main" onclick="toggleMenu()">+</div>
-        
-        <div class="fab-menu" id="fabMenu">
-            <div class="fab-item" onclick="switchApp('a')" data-label="切换到 A">A</div>
-            <div class="fab-item" onclick="switchApp('b')" data-label="切换到 B">B</div>
-            <div class="fab-item" style="background: #333; color: #fff;" onclick="goHome()" data-label="退出桌面">🏠</div>
+    <!-- 3. 悬浮按钮 (FAB) -->
+    <div id="fab-container" class="fab-container">
+        <div class="fab-menu">
+            <button class="fab-item" onclick="goHome()" data-label="主屏幕">
+                <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+            </button>
+            <button class="fab-item" onclick="openApp('frame-b')" data-label="切换到 B" style="color: #a18cd1;">B</button>
+            <button class="fab-item" onclick="openApp('frame-a')" data-label="切换到 A" style="color: #ff9a9e;">A</button>
         </div>
+        <button id="fab-main" class="fab-main" onclick="toggleMenu()">
+            <svg viewBox="0 0 24 24"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
+        </button>
     </div>
 
     <script>
-        const launcher = document.getElementById('launcher');
-        const appViewer = document.getElementById('app-viewer');
-        const fabContainer = document.getElementById('fabContainer');
-        const fabMenu = document.getElementById('fabMenu');
-        const fabMain = document.querySelector('.fab-main');
-        
-        let currentAppId = null;
+        const fabContainer = document.getElementById('fab-container');
+        const fabMain = document.getElementById('fab-main');
+        const launcherScreen = document.getElementById('launcher-screen');
+        const frames = document.querySelectorAll('.app-frame');
 
-        function openApp(id) {
-            currentAppId = id;
-            const iframe = document.getElementById('frame-' + id);
-            if (!iframe.src && iframe.dataset.src) {
-                iframe.src = iframe.dataset.src;
-            }
-            document.querySelectorAll('iframe').forEach(el => el.classList.remove('show'));
-            iframe.classList.add('show');
-            launcher.classList.add('hidden');
-            appViewer.classList.add('active');
-            setTimeout(() => {
-                fabContainer.classList.add('visible');
-            }, 300);
+        // 打开指定的应用
+        function openApp(frameId) {
+            // 1. 标记 Body 为应用打开状态 (用于显示 FAB，隐藏 Launcher)
+            document.body.classList.add('app-open');
+            
+            // 2. 隐藏 Launcher 视觉效果
+            launcherScreen.classList.add('hidden');
+
+            // 3. 切换 Iframe 的显示状态
+            frames.forEach(frame => {
+                if (frame.id === frameId) {
+                    frame.classList.add('active');
+                } else {
+                    frame.classList.remove('active');
+                }
+            });
+
+            // 4. 关闭悬浮菜单
+            closeMenu();
         }
 
+        // 返回主屏幕
         function goHome() {
-            toggleMenu(false);
-            appViewer.classList.remove('active'); 
-            launcher.classList.remove('hidden'); 
-            fabContainer.classList.remove('visible');
-            currentAppId = null;
-        }
-
-        function switchApp(id) {
-            if (currentAppId === id) {
-                toggleMenu(false); 
-                return;
-            }
-            toggleMenu(false);
-            appViewer.style.opacity = '0'; 
+            document.body.classList.remove('app-open');
+            launcherScreen.classList.remove('hidden');
+            
+            // 可选：为了节省资源，你也可以在这里移除 iframe 的 active 类，
+            // 但保留 active 类可以让 iframe 在后台继续保持“最后一次看到的状态”
+            // 这里我们稍微延迟一下移除 active，让转场更自然
             setTimeout(() => {
-                openApp(id); 
-                appViewer.style.opacity = '1'; 
-            }, 200);
+                frames.forEach(frame => frame.classList.remove('active'));
+            }, 300);
+
+            closeMenu();
         }
 
-        function toggleMenu(forceState) {
-            const isOpen = fabMenu.classList.contains('show');
-            const shouldOpen = forceState !== undefined ? forceState : !isOpen;
-
-            if (shouldOpen) {
-                fabMenu.classList.add('show');
-                fabMain.classList.add('open');
+        // 切换悬浮菜单展开/收起
+        function toggleMenu() {
+            fabContainer.classList.toggle('menu-open');
+            fabMain.classList.toggle('expanded');
+            
+            // 切换图标 (菜单 <-> 关闭)
+            if (fabMain.classList.contains('expanded')) {
+                fabMain.innerHTML = '<svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>'; // Close X
             } else {
-                fabMenu.classList.remove('show');
-                fabMain.classList.remove('open');
+                fabMain.innerHTML = '<svg viewBox="0 0 24 24"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>'; // Menu
             }
         }
+
+        function closeMenu() {
+            fabContainer.classList.remove('menu-open');
+            fabMain.classList.remove('expanded');
+            fabMain.innerHTML = '<svg viewBox="0 0 24 24"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>';
+        }
+
+        // 点击 iframe 外部区域（如果存在）关闭菜单
+        document.addEventListener('click', (e) => {
+            if (!fabContainer.contains(e.target) && fabContainer.classList.contains('menu-open')) {
+                closeMenu();
+            }
+        });
     </script>
 </body>
 </html>
+
