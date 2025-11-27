@@ -5,9 +5,7 @@
  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
   <title>EPhone PWA</title>
-  <!-- 你的原始 CSS 链接 -->
   <link rel="stylesheet" href="style.css"> 
-  <!-- 图标等配置保持不变 -->
   <link rel="apple-touch-icon" href="https://s3plus.meituan.net/opapisdk/op_ticket_885190757_1758510900942_qdqqd_djw0z2.jpeg">
   <link rel="manifest" href="manifest.json">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -18,7 +16,7 @@
   <meta name="theme-color" content="#f0f2f5">
     
     <style>
-        /* --- 保持你的原始 CSS 不变 --- */
+        /* --- 你的原始 CSS (保持布局不变) --- */
         :root {
             --screen-width: 350px;
             --screen-height: 650px;
@@ -77,7 +75,7 @@
             top: 0;
             left: 0;
             box-sizing: border-box;
-            z-index: 200;
+            z-index: 200; /* 状态栏始终在最上层 */
             text-shadow: 0 1px 3px rgba(0,0,0,0.4);
             font-size: 14px;
             font-weight: 600;
@@ -230,19 +228,20 @@
             filter: brightness(0.8);
         }
 
-        /* --- App 容器样式 (修改部分：适配iframe) --- */
+        /* --- App 容器样式 (已修改：移除padding，全屏覆盖) --- */
         .app-window {
             width: 100%;
             height: 100%;
             position: absolute;
             top: 0;
             left: 0;
-            background-color: #fff;
+            /* 确保背景纯白，遮挡主屏幕 */
+            background-color: #fff; 
             z-index: 50; 
             display: none; 
             flex-direction: column;
-            /* 移除 padding，让 iframe 充满屏幕 */
-            padding-top: calc(44px + env(safe-area-inset-top)); 
+            /* 重点修改：移除所有 padding，让 iframe 填满整个屏幕 */
+            padding: 0; 
             box-sizing: border-box;
             
             transform: scale(0.9);
@@ -256,12 +255,12 @@
             opacity: 1;
         }
 
-        /* 新增：iframe 样式 */
+        /* Iframe 样式 */
         .app-iframe {
             width: 100%;
             height: 100%;
             border: none;
-            flex: 1;
+            display: block; /* 防止出现行内元素的空隙 */
             background-color: #fff;
         }
 
@@ -330,7 +329,6 @@
                   <!-- App A 入口 -->
                   <div class="desktop-app-icon" onclick="openApp('a')">
                     <div class="icon-bg-desktop">
-                      <!-- 保持你的图片占位符 -->
                       <img src="https://via.placeholder.com/100/007bff/ffffff?text=A" alt="App A">
                     </div> 
                     <span class="label">应用 A</span>
@@ -353,25 +351,25 @@
       </div>
     </div>
 
-    <!-- App A 页面 (嵌入 Iframe) -->
+    <!-- App A 页面 (全屏 Iframe) -->
     <div id="app-a" class="app-window">
-        <!-- 修改为 Iframe -->
+        <!-- 替换为你需要的链接 -->
         <iframe src="https://cx3300-1.github.io/ooooka/" class="app-iframe" title="App A"></iframe>
     </div>
 
-    <!-- App B 页面 (嵌入 Iframe) -->
+    <!-- App B 页面 (全屏 Iframe) -->
     <div id="app-b" class="app-window">
-        <!-- 修改为 Iframe -->
+        <!-- 替换为你需要的链接 -->
         <iframe src="https://cx3300-1.github.io/sfsfdf/" class="app-iframe" title="App B"></iframe>
     </div>
 
-    <!-- 悬浮按钮 (用于切换/退出) -->
+    <!-- 悬浮按钮 -->
     <div id="floating-btn"></div>
 
 </div>
 
 <script>
-    // --- 1. 基础逻辑：时间更新 ---
+    // --- 1. 时间更新 ---
     function updateTime() {
         const now = new Date();
         const hours = String(now.getHours()).padStart(2, '0');
@@ -387,36 +385,40 @@
     const appB = document.getElementById('app-b');
     let currentApp = null; 
 
-    // 打开 App
     function openApp(appId) {
+        let activeApp;
         if (appId === 'a') {
-            appA.style.display = 'flex';
-            setTimeout(() => appA.classList.add('active'), 10);
+            activeApp = appA;
             currentApp = 'a';
         } else if (appId === 'b') {
-            appB.style.display = 'flex';
-            setTimeout(() => appB.classList.add('active'), 10);
+            activeApp = appB;
             currentApp = 'b';
         }
-        
-        homeScreen.style.transform = 'scale(0.95)';
-        homeScreen.style.opacity = '0';
+
+        if (activeApp) {
+            activeApp.style.display = 'flex';
+            // 延迟一点点加 class 触发 transition
+            setTimeout(() => activeApp.classList.add('active'), 10);
+            
+            // 主屏幕缩小并变透明
+            homeScreen.style.transform = 'scale(0.95)';
+            homeScreen.style.opacity = '0';
+        }
     }
 
-    // 回到桌面 (退出 App)
     function goHome() {
         if (!currentApp) return; 
 
         const activeApp = currentApp === 'a' ? appA : appB;
         
+        // 移除 active 触发缩小消失动画
         activeApp.classList.remove('active');
         
         setTimeout(() => {
             activeApp.style.display = 'none';
-            // 可选：如果希望每次退出重置页面，可以在这里重置 iframe src
-            // activeApp.querySelector('iframe').src = activeApp.querySelector('iframe').src;
         }, 300);
 
+        // 恢复主屏幕
         homeScreen.style.transform = 'scale(1)';
         homeScreen.style.opacity = '1';
         
@@ -440,8 +442,8 @@
         startY = clientY;
         
         const rect = floatBtn.getBoundingClientRect();
-        // 获取相对于最近定位父级的位置
         const parentRect = document.getElementById('phone-screen').getBoundingClientRect();
+        // 计算相对于 phone-screen 的偏移
         initialLeft = rect.left - parentRect.left;
         initialTop = rect.top - parentRect.top;
 
@@ -488,8 +490,6 @@
         const screenWidth = phoneScreen.clientWidth;
         const screenHeight = phoneScreen.clientHeight;
         
-        // 计算当前按钮相对于 phone-screen 的位置
-        // 注意：因为 floatBtn 是 absolute 定位在 phone-screen 内
         let currentLeft = parseFloat(floatBtn.style.left);
         if (isNaN(currentLeft)) currentLeft = floatBtn.offsetLeft;
         
@@ -500,14 +500,14 @@
 
         floatBtn.style.transition = 'all 0.3s ease';
         
-        // 吸附左右
+        // 左右吸附
         if (currentLeft + btnWidth / 2 < screenWidth / 2) {
             floatBtn.style.left = '10px';
         } else {
             floatBtn.style.left = (screenWidth - btnWidth - 10) + 'px';
         }
 
-        // 限制上下
+        // 上下边界限制
         if (currentTop < 50) floatBtn.style.top = '50px';
         if (currentTop > screenHeight - 80) floatBtn.style.top = (screenHeight - 80) + 'px';
 
@@ -520,10 +520,8 @@
         if (navigator.vibrate) navigator.vibrate(50);
 
         if (currentApp) {
-            // 在 App 中点击 -> 回桌面
             goHome();
         } else {
-            // 在桌面点击 -> 简单动画反馈
             floatBtn.style.transform = 'scale(0.8)';
             setTimeout(() => floatBtn.style.transform = 'scale(1)', 100);
         }
@@ -532,19 +530,14 @@
     floatBtn.addEventListener('mousedown', dragStart);
     floatBtn.addEventListener('touchstart', dragStart, { passive: false });
 
-    // --- 4. PWA Service Worker 注册 ---
+    // --- 4. Service Worker 注册 ---
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
             navigator.serviceWorker.register('sw.js')
-                .then(registration => {
-                    console.log('SW registered: ', registration);
-                })
-                .catch(registrationError => {
-                    console.log('SW registration failed: ', registrationError);
-                });
+                .then(registration => console.log('SW registered'))
+                .catch(err => console.log('SW failed', err));
         });
     }
-
 </script>
 </body>
 </html>
