@@ -13,57 +13,27 @@
     <title>PWA Demo</title>
     <style>
         /* --- 你的原始 CSS (保持不变) --- */
-        :root {
-            --screen-width: 350px;
-            --screen-height: 650px;
-            --border-color: #e0e0e0;
-            --text-primary: #1f1f1f;
-        }
-
-        html, body {
-            margin: 0;
-            padding: 0;
-            height: 100%;
-            overflow: hidden;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background-color: #f0f2f5;
+ :root { --screen-width: 350px; --screen-height: 650px; --secondary-bg: #ffffff; --border-color: #e0e0e0; --text-primary: #1f1f1f; --text-secondary: #8a8a8a; --accent-color: #007bff; }
+        html {
             -webkit-text-size-adjust: 100%;
-            /* 禁止选中文字，更像App */
-            user-select: none;
-            -webkit-user-select: none;
+            height: 100%; 
         }
-
-        /* --- 手机屏幕容器 --- */
+        body {
+            margin: 0;
+            font-family: 'bulangni', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-weight: normal;
+            background-color: #f0f2f5;
+            height: 100%; 
+            overflow: hidden; 
+        }
         #phone-screen {
             width: 100%;
-            height: 100vh;
+            height: 100vh; 
             position: relative;
             overflow: hidden;
             display: flex;
             flex-direction: column;
-            background: linear-gradient(135deg, #6DD5FA, #2980B9);
-            background-size: cover;
-            background-position: center;
-        }
-
-        /* --- 状态栏 --- */
-        #status-bar {
-            padding: 0 20px;
-            height: 44px;
-            width: 100%;
-            color: white;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            position: absolute;
-            top: 0;
-            left: 0;
-            box-sizing: border-box;
-            z-index: 200; /* 提高层级，确保在App之上 */
-            text-shadow: 0 1px 3px rgba(0,0,0,0.4);
-            font-size: 14px;
-            font-weight: 600;
-            pointer-events: none; /* 让点击穿透状态栏 */
+            background-color: #ffffff; 
         }
 
         .battery-container {
