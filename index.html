@@ -5,9 +5,9 @@
  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
   <title>EPhone PWA</title>
-  <link rel="stylesheet" href="style.css"> 
+  
+  <!-- PWA 设置 -->
   <link rel="apple-touch-icon" href="https://s3plus.meituan.net/opapisdk/op_ticket_885190757_1758510900942_qdqqd_djw0z2.jpeg">
-  <link rel="manifest" href="manifest.json">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="EPhone">
@@ -16,7 +16,6 @@
   <meta name="theme-color" content="#f0f2f5">
     
     <style>
-        /* --- 你的原始 CSS (完全保留) --- */
         :root {
             --screen-width: 350px;
             --screen-height: 650px;
@@ -50,8 +49,6 @@
             background-position: center;
         }
 
-        /* --- 状态栏 CSS 已删除 --- */
-
         /* --- 屏幕通用 --- */
         .screen {
             width: 100%;
@@ -63,6 +60,7 @@
             flex-direction: column;
             overflow: hidden;
             transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.3s;
+            z-index: 10; /* 确保主屏幕层级 */
         }
 
         /* --- 主屏幕布局 --- */
@@ -70,7 +68,6 @@
             padding-top: calc(20px + env(safe-area-inset-top));
             padding-bottom: 20px;
             box-sizing: border-box;
-            z-index: 10;
         }
 
         #home-screen-pages-container {
@@ -166,7 +163,7 @@
             filter: brightness(0.8);
         }
 
-        /* --- App 容器样式 (已修改：实现“不刷新”的关键) --- */
+        /* --- App 容器样式 (关键修改点) --- */
         .app-window {
             width: 100%;
             height: 100%;
@@ -176,27 +173,28 @@
             background-color: #fff; 
             z-index: 50; 
             
-            /* 修改点 1: 始终保持 flex 布局，不用 display: none */
+            /* 修改部分：始终 display: flex，但通过 visibility 隐藏 */
             display: flex; 
             flex-direction: column;
-            padding: 0; 
+            padding: 0;
             box-sizing: border-box;
             
-            /* 修改点 2: 默认状态改为“隐身”且“不可点击” */
-            visibility: hidden;
-            pointer-events: none;
-            
-            transform: scale(0.9);
+            /* 默认隐藏状态 */
             opacity: 0;
-            transition: transform 0.3s ease, opacity 0.3s ease, visibility 0.3s;
+            visibility: hidden; 
+            pointer-events: none; /* 隐藏时不响应点击，穿透到桌面 */
+            transform: scale(0.9);
+            
+            transition: transform 0.3s ease, opacity 0.3s ease, visibility 0s linear 0.3s; /* visibility 延迟变化 */
         }
 
         .app-window.active {
-            /* 修改点 3: 激活时可见并可点击 */
-            visibility: visible;
-            pointer-events: auto;
-            transform: scale(1);
+            /* 激活状态 */
             opacity: 1;
+            visibility: visible;
+            pointer-events: auto; /* 激活时恢复点击 */
+            transform: scale(1);
+            transition: transform 0.3s ease, opacity 0.3s ease, visibility 0s linear 0s; /* 立即显示 */
         }
 
         /* Iframe 样式 */
@@ -248,27 +246,33 @@
 
 <div id="phone-screen">
     
+    <!-- 主屏幕 (Home Screen) -->
     <div id="home-screen" class="screen">
       <div id="home-screen-pages-container">
         <div id="home-screen-pages">
           <div class="home-screen-page">
             <div id="main-content-area">
               
+              <!-- 桌面布局 -->
               <div id="desktop-layout">
                 <div id="desktop-app-container">
                   
+                  <!-- App A 入口 -->
                   <div class="desktop-app-icon" onclick="openApp('a')">
                     <div class="icon-bg-desktop">
+                      <!-- 替换成你的图标 -->
                       <img src="https://via.placeholder.com/100/007bff/ffffff?text=A" alt="App A">
                     </div> 
-                    <span class="label">应用 A</span>
+                    <span class="label">Github A</span>
                   </div>
 
+                  <!-- App B 入口 -->
                   <div class="desktop-app-icon" onclick="openApp('b')">
                     <div class="icon-bg-desktop">
+                      <!-- 替换成你的图标 -->
                       <img src="https://via.placeholder.com/100/28a745/ffffff?text=B" alt="App B">
                     </div> 
-                    <span class="label">应用 B</span>
+                    <span class="label">Github B</span>
                   </div>
 
                 </div>
@@ -280,20 +284,26 @@
       </div>
     </div>
 
+    <!-- App A 页面 -->
+    <!-- 注意：iframe 一开始就会加载，这是数据不丢失的关键 -->
     <div id="app-a" class="app-window">
+        <!-- 请在这里替换成你的第一个 Github 链接 -->
         <iframe src="https://cx3300-1.github.io/ooooka/" class="app-iframe" title="App A"></iframe>
     </div>
 
+    <!-- App B 页面 -->
     <div id="app-b" class="app-window">
+        <!-- 请在这里替换成你的第二个 Github 链接 -->
         <iframe src="https://cx3300-1.github.io/sfsfdf/" class="app-iframe" title="App B"></iframe>
     </div>
 
+    <!-- 悬浮按钮 -->
     <div id="floating-btn"></div>
 
 </div>
 
 <script>
-    // --- App 切换逻辑 (已修改优化) ---
+    // --- App 切换逻辑 (已优化：去掉了 display 切换，只用 class) ---
     const homeScreen = document.getElementById('home-screen');
     const appA = document.getElementById('app-a');
     const appB = document.getElementById('app-b');
@@ -301,6 +311,11 @@
 
     function openApp(appId) {
         let activeApp;
+        
+        // 确保先关闭所有应用（虽然通常只有一个）
+        appA.classList.remove('active');
+        appB.classList.remove('active');
+
         if (appId === 'a') {
             activeApp = appA;
             currentApp = 'a';
@@ -310,35 +325,32 @@
         }
 
         if (activeApp) {
-            // 修改：不再设置 style.display = 'flex'，因为它一直都是 flex
-            // 只需要加 active 类，通过 visibility 和 opacity 来显示
+            // 直接添加 class，不再操作 style.display
             activeApp.classList.add('active');
             
             // 主屏幕缩小并变透明
             homeScreen.style.transform = 'scale(0.95)';
             homeScreen.style.opacity = '0';
+            homeScreen.style.pointerEvents = 'none'; // 桌面不可点
         }
     }
 
     function goHome() {
         if (!currentApp) return; 
 
-        const activeApp = currentApp === 'a' ? appA : appB;
-        
-        // 修改：移除 active 类即可，CSS transition 处理淡出
-        activeApp.classList.remove('active');
-        
-        // 修改：删除了 setTimeout 中设置 display: none 的代码
-        // 这样 iframe 依然在后台运行，数据不会丢失
+        // 移除 active class，App 会缩放淡出但不会销毁
+        appA.classList.remove('active');
+        appB.classList.remove('active');
 
         // 恢复主屏幕
         homeScreen.style.transform = 'scale(1)';
         homeScreen.style.opacity = '1';
+        homeScreen.style.pointerEvents = 'auto'; // 桌面恢复可点
         
         currentApp = null;
     }
 
-    // --- 悬浮按钮逻辑 (保持不变) ---
+    // --- 悬浮按钮逻辑 (保留原样) ---
     const floatBtn = document.getElementById('floating-btn');
     let isDragging = false;
     let startX, startY, initialLeft, initialTop;
@@ -439,15 +451,6 @@
 
     floatBtn.addEventListener('mousedown', dragStart);
     floatBtn.addEventListener('touchstart', dragStart, { passive: false });
-
-    // --- Service Worker 注册 ---
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('sw.js')
-                .then(registration => console.log('SW registered'))
-                .catch(err => console.log('SW failed', err));
-        });
-    }
 </script>
 </body>
 </html>
