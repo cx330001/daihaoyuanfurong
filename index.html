@@ -8,65 +8,35 @@
     <title>我的工作台</title>
     <style>
         /* === 基础样式 === */
-       /* 1. 根节点样式：负责填充“刘海”和“下巴”的底色 */
-html, body {
-    margin: 0;
-    padding: 0;
-    width: 100%;
-    height: 100%;
-    /* 关键：将底色设为黑色！
-       这样当 #phone-screen 下移后，露出来的顶部和底部就是黑色的，看起来像原生状态栏 */
-    background-color: #000000; 
-    /* 禁止整个页面的弹性滚动（橡皮筋效果） */
-    overflow: hidden;
-    position: fixed;
-}
-
-/* 2. 主容器样式：你的 App 内容 */
-#phone-screen {
-    /* 固定定位 */
-    position: fixed;
-    
-    /* === 核心布局逻辑 === */
-    /* 顶部：从安全区域下方开始（背景真的下移了，避开刘海） */
-    top: env(safe-area-inset-top);
-    
-    /* 底部：从安全区域上方结束（避开底部横条） */
-    bottom: env(safe-area-inset-bottom);
-    
-    /* 左右撑满 */
-    left: 0;
-    right: 0;
-
-    /* 不需要设置 height，因为 top 和 bottom 已经决定了它的高度 */
-    
-    /* 你的背景色 */
-    background-color: var(--secondary-bg); 
-    /* 或者你的渐变背景 */
-    /* background: linear-gradient(135deg, #1e1e2f, #2d2d44); */
-
-    /* 内部布局 */
-    display: flex;
-    flex-direction: column;
-    overflow: hidden; /* 确保容器内部若有溢出也切断 */
-    
-    /* 既然容器已经避开了刘海，这里就不要再加 padding 了，否则会双倍间距 */
-    padding-top: 0;
-    padding-bottom: 0;
-}
+        body, html {
+            margin: 0; padding: 0;
+            width: 100%; height: 100%;
+            overflow: hidden;
+            background: linear-gradient(135deg, #1e1e2f, #2d2d44);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
 
         /* === 1. 桌面启动器 (Launcher) === */
         #launcher {
+            /* 核心修改2：让启动器容器占满全屏，但内容避开刘海 */
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            height: 100%;
-            width: 100%;
             transition: transform 0.3s ease, opacity 0.3s ease;
+            
+            /* 关键：增加顶部内边距，利用环境变量避开状态栏 */
+            padding-top: env(safe-area-inset-top); 
+            padding-bottom: env(safe-area-inset-bottom);
+            box-sizing: border-box; /* 确保 padding 不会撑大容器 */
         }
 
-        /* 隐藏启动器时的状态 */
         #launcher.hidden {
             transform: scale(0.9);
             opacity: 0;
@@ -75,7 +45,7 @@ html, body {
 
         .app-grid {
             display: grid;
-            grid-template-columns: repeat(2, 1fr); /* 两列布局 */
+            grid-template-columns: repeat(2, 1fr);
             gap: 40px;
         }
 
@@ -90,7 +60,6 @@ html, body {
 
         .app-icon:active { transform: scale(0.95); }
 
-        /* 图标样式 */
         .icon-box {
             width: 70px; height: 70px;
             border-radius: 18px;
@@ -103,7 +72,6 @@ html, body {
             margin-bottom: 10px;
         }
 
-        /* 两个不同的颜色 */
         .color-a { background: linear-gradient(135deg, #FF6B6B, #EE5D5D); }
         .color-b { background: linear-gradient(135deg, #4facfe, #00f2fe); }
 
@@ -113,32 +81,50 @@ html, body {
             text-shadow: 0 1px 2px rgba(0,0,0,0.5);
         }
 
-        /* === 2. 应用容器 (App Container) === */
+        /* === 2. 应用容器 (App Container) - 状态栏分离核心 === */
         #app-viewer {
-            position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
+            position: fixed; /* 使用 fixed 固定定位 */
+            
+            /* 核心修改3：顶部从安全区域下方开始，实现“物理分离” */
+            top: env(safe-area-inset-top); 
+            
+            left: 0;
+            right: 0; /* 左右拉伸 */
+            bottom: 0; /* 底部对齐屏幕边缘 */
+            
+            /* 高度自动计算，不再强制 100% */
+            height: auto; 
+            
             background: #fff;
-            transform: translateY(100%); /* 默认向下隐藏 */
+            transform: translateY(100%);
             transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
             z-index: 10;
+            
+            /* 可选：给分离后的顶部加一点圆角，更像原生窗口 */
+            border-top-left-radius: 16px;
+            border-top-right-radius: 16px;
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.2); /* 增加阴影提升层次感 */
+            overflow: hidden; /* 裁剪 iframe圆角 */
         }
 
         #app-viewer.active {
-            transform: translateY(0); /* 滑上来 */
+            transform: translateY(0);
         }
 
         iframe {
             width: 100%; height: 100%;
             border: none;
-            display: none; /* 默认隐藏iframe，只显示被激活的 */
+            display: none;
         }
         iframe.show { display: block; }
 
-        /* === 3. 悬浮按钮 (Floating Button) === */
+        /* === 3. 悬浮按钮 (Fab) === */
         .fab {
             position: fixed;
-            bottom: 30px;
+            
+            /* 核心修改4：底部距离自动适配 iPhone 底部横条区域 */
+            bottom: calc(30px + env(safe-area-inset-bottom));
+            
             right: 30px;
             width: 50px;
             height: 50px;
@@ -154,11 +140,10 @@ html, body {
             z-index: 999;
             cursor: pointer;
             transition: all 0.3s;
-            opacity: 0; /* 默认在桌面隐藏 */
+            opacity: 0;
             pointer-events: none;
         }
 
-        /* 当 App 打开时，显示悬浮按钮 */
         body.app-open .fab {
             opacity: 1;
             pointer-events: auto;
@@ -171,62 +156,56 @@ html, body {
 </head>
 <body>
 
-    <div id="launcher">
-        <h2 style="color:white; margin-bottom:40px; font-weight:300;">My Toolbox</h2>
-        <div class="app-grid">
-            <div class="app-icon" onclick="openApp('a')">
-                <div class="icon-box color-a">A</div> <div class="app-name">功能 A</div>
-            </div>
-            
-            <div class="app-icon" onclick="openApp('b')">
-                <div class="icon-box color-b">B</div>
-                <div class="app-name">功能 B</div>
-            </div>
+<div id="launcher">
+    <h2 style="color:white; margin-bottom:40px; font-weight:300;">My Toolbox</h2>
+    <div class="app-grid">
+        <div class="app-icon" onclick="openApp('a')">
+            <div class="icon-box color-a">A</div> <div class="app-name">功能 A</div>
+        </div>
+        
+        <div class="app-icon" onclick="openApp('b')">
+            <div class="icon-box color-b">B</div>
+            <div class="app-name">功能 B</div>
         </div>
     </div>
+</div>
 
-    <div id="app-viewer">
-        <iframe id="frame-a" src="https://cx3300-1.github.io/ooooka/" class="active"></iframe>
-    <iframe id="frame-b" src="https://cx3300-1.github.io/sfsfdf/"></iframe>
-    </div>
+<div id="app-viewer">
+    <iframe id="frame-a" data-src="https://你的用户名.github.io/project-a/"></iframe>
+    <iframe id="frame-b" data-src="https://你的用户名.github.io/project-b/"></iframe>
+</div>
 
-    <div class="fab" onclick="goHome()">
-        ✕
-    </div>
+<div class="fab" onclick="goHome()">
+    ✕
+</div>
 
-    <script>
-        const viewer = document.getElementById('app-viewer');
-        const launcher = document.getElementById('launcher');
-        const frames = {
-            'a': document.getElementById('frame-a'),
-            'b': document.getElementById('frame-b')
-        };
+<script>
+    const viewer = document.getElementById('app-viewer');
+    const launcher = document.getElementById('launcher');
+    const frames = {
+        'a': document.getElementById('frame-a'),
+        'b': document.getElementById('frame-b')
+    };
 
-        // 打开 App
-        function openApp(appId) {
-            // 1. 加载 URL (懒加载：第一次点击才加载，节省流量)
-            let iframe = frames[appId];
-            if (!iframe.src) {
-                iframe.src = iframe.getAttribute('data-src');
-            }
-
-            // 2. 切换 iframe 显示
-            document.querySelectorAll('iframe').forEach(el => el.classList.remove('show'));
-            iframe.classList.add('show');
-
-            // 3. UI 动画：显示容器，隐藏桌面
-            viewer.classList.add('active');
-            launcher.classList.add('hidden');
-            document.body.classList.add('app-open'); // 激活悬浮按钮
+    function openApp(appId) {
+        let iframe = frames[appId];
+        if (!iframe.src) {
+            iframe.src = iframe.getAttribute('data-src');
         }
 
-        // 返回桌面
-        function goHome() {
-            // 1. UI 动画：隐藏容器，显示桌面
-            viewer.classList.remove('active');
-            launcher.classList.remove('hidden');
-            document.body.classList.remove('app-open'); // 隐藏悬浮按钮
-        }
-    </script>
+        document.querySelectorAll('iframe').forEach(el => el.classList.remove('show'));
+        iframe.classList.add('show');
+
+        viewer.classList.add('active');
+        launcher.classList.add('hidden');
+        document.body.classList.add('app-open');
+    }
+
+    function goHome() {
+        viewer.classList.remove('active');
+        launcher.classList.remove('hidden');
+        document.body.classList.remove('app-open');
+    }
+</script>
 </body>
 </html>
