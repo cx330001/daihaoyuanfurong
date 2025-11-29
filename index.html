@@ -1,463 +1,668 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-<head>
+  <head>
+    <meta charset="UTF-8" />
+    <!-- 1. 核心修改：禁止缩放，保证完美贴合，和 index2 保持一致 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=5.0, user-scalable=yes">
+    <title>EPhone PWA</title>
+    <link rel="stylesheet" href="style.css" />
+    <link
+      rel="apple-touch-icon"
+      href="https://s3plus.meituan.net/opapisdk/op_ticket_885190757_1758510900942_qdqqd_djw0z2.jpeg"
+    />
+    <link rel="manifest" href="manifest.json" />
+    <link href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" rel="stylesheet" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="EPhone" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <link
+      rel="icon"
+      type="image/png"
+      href="https://s3plus.meituan.net/opapisdk/op_ticket_885190757_1756312261242_qdqqd_g0eriz.jpeg"
+    />
+    <meta name="theme-color" content="#f0f2f5" />
+<style>
+    /* --- 核心变量：奶油草莓果冻风 --- */
+    :root {
+        --jelly-pink: rgba(255, 192, 203, 0.92); 
+        --cream-white: #fff0f5;   
+        --deep-candy: #e91e63;    
+        --tape-dark: #795548;     
+        --soft-shadow: 8px 8px 0px rgba(233, 30, 99, 0.15); 
+    }
 
- <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
-  <title>EPhone PWA</title>
-  <link rel="stylesheet" href="style.css"> 
-  <link rel="apple-touch-icon" href="https://s3plus.meituan.net/opapisdk/op_ticket_885190757_1758510900942_qdqqd_djw0z2.jpeg">
-  <link rel="manifest" href="manifest.json">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="EPhone">
-  <meta name="mobile-web-app-capable" content="yes">
-  <link rel="icon" type="image/png" href="https://s3plus.meituan.net/opapisdk/op_ticket_885190757_1756312261242_qdqqd_g0eriz.jpeg">
-  <meta name="theme-color" content="#f0f2f5">
+    html { -webkit-text-size-adjust: 100%; height: 100%; }
     
-    <style>
-        /* --- 你的原始 CSS --- */
-        :root {
-            --screen-width: 350px;
-            --screen-height: 650px;
-            --border-color: #e0e0e0;
-            --text-primary: #1f1f1f;
-        }
+    body {
+        margin: 0;
+        font-family: 'DotGothic16', monospace;
+        background-color: #fff0f5;
+        /* 粉白格纹 */
+        background-image: 
+            linear-gradient(90deg, rgba(255, 192, 203, 0.5) 50%, transparent 50%),
+            linear-gradient(rgba(255, 192, 203, 0.5) 50%, transparent 50%);
+        background-size: 50px 50px;
+        height: 100%; 
+        overflow: hidden; 
+        color: var(--deep-candy);
+        position: relative;
+        /* 平滑过渡背景变化 */
+        transition: background-color 0.3s; 
+    }
 
-          html {
-            -webkit-text-size-adjust: 100%;
-            height: 100%; 
-        }
-        body {
-            margin: 0;
-            font-family: 'bulangni', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            font-weight: normal;
-            background-color: #f0f2f5;
-            height: 100%; 
-            overflow: hidden; 
-        }
+    /* 星星层 */
+    #star-layer {
+        position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+        pointer-events: none; z-index: 0;
+        background-image: 
+            radial-gradient(2px 2px at 20px 30px, #fff, rgba(0,0,0,0)),
+            radial-gradient(2px 2px at 40px 70px, #fff, rgba(0,0,0,0)),
+            radial-gradient(2px 2px at 50px 160px, #fff, rgba(0,0,0,0)),
+            radial-gradient(2px 2px at 90px 40px, #fff, rgba(0,0,0,0)),
+            radial-gradient(2px 2px at 130px 80px, #fff, rgba(0,0,0,0)),
+            radial-gradient(2px 2px at 160px 120px, #fff, rgba(0,0,0,0));
+        background-repeat: repeat;
+        background-size: 200px 200px;
+        animation: twinkle 4s infinite ease-in-out;
+        opacity: 0.6;
+        transition: opacity 0.3s; /* 添加过渡 */
+    }
 
-        /* --- 手机屏幕容器 --- */
-        #phone-screen {
-            width: 100%;
-            height: 100vh;
-            position: relative;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            background: linear-gradient(135deg, #6DD5FA, #2980B9);
-            background-size: cover;
-            background-position: center;
-        }
+    @keyframes twinkle {
+        0%, 100% { opacity: 0.3; transform: scale(1); }
+        50% { opacity: 0.8; transform: scale(1.1); }
+    }
 
-        /* --- 状态栏 CSS 已删除 --- */
-
-        /* --- 屏幕通用 --- */
-        .screen {
-            width: 100%;
-            height: 100%;
-            position: absolute;
-            top: 0;
-            left: 0;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.3s;
-        }
-
-        /* --- 主屏幕布局 --- */
-        #home-screen {
-            /* 修改：去掉了原有的 44px 状态栏预留高度，改为 20px 基础间距 */
-            padding-top: calc(20px + env(safe-area-inset-top));
-            padding-bottom: 20px;
-            box-sizing: border-box;
-            z-index: 10;
-        }
-
-        #home-screen-pages-container {
-            flex-grow: 1;
-            width: 100%;
-            height: 100%;
-            position: relative;
-            overflow: hidden;
-        }
-
-        #home-screen-pages {
-            width: 100%;
-            height: 100%;
-            display: flex;
-        }
-
-        .home-screen-page {
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center; 
-        }
-
-        #main-content-area {
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-        }
-
-        /* --- 桌面图标样式 --- */
-        #desktop-layout {
-            width: 100%;
-            display: flex;
-            justify-content: center;
-            padding: 0 20px;
-            box-sizing: border-box;
-        }
-
-        #desktop-app-container {
-            display: flex;
-            gap: 30px;
-        }
-
-        .desktop-app-icon {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 8px;
-            cursor: pointer;
-            text-align: center;
-            width: 60px;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        .icon-bg-desktop {
-            width: 60px;
-            height: 60px;
-            border-radius: 14px;
-            background-color: #f0f2f5;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            overflow: hidden;
-            transition: transform 0.1s ease;
-        }
-
-        .icon-bg-desktop img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            display: block;
-        }
-
-        .desktop-app-icon .label {
-            color: white;
-            font-size: 13px;
-            font-weight: 500;
-            text-shadow: 0 1px 3px rgba(0,0,0,0.5);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            width: 100%;
-        }
-
-        .desktop-app-icon:active .icon-bg-desktop {
-            transform: scale(0.9);
-            filter: brightness(0.8);
-        }
-
-        /* --- App 容器样式 --- */
-        .app-window {
-            width: 100%;
-            height: 100%;
-            position: absolute;
-            top: 0;
-            left: 0;
-            background-color: #fff; 
-            z-index: 50; 
-            display: none; 
-            flex-direction: column;
-            padding: 0; /* 无内边距，全屏显示 */
-            box-sizing: border-box;
-            
-            transform: scale(0.9);
-            opacity: 0;
-            transition: transform 0.3s ease, opacity 0.3s ease;
-        }
-
-        .app-window.active {
-            display: flex;
-            transform: scale(1);
-            opacity: 1;
-        }
-
-        /* Iframe 样式 */
-        .app-iframe {
-            width: 100%;
-            height: 100%;
-            border: none;
-            display: block;
-            background-color: #fff;
-        }
-
-        /* 悬浮按钮 (Assistive Touch) */
-        #floating-btn {
-            width: 50px;
-            height: 50px;
-            background: rgba(50, 50, 50, 0.6);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border-radius: 14px; 
-            position: absolute;
-            top: 60%;
-            right: 20px;
-            z-index: 999;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-            border: 1px solid rgba(255,255,255,0.2);
-            cursor: move;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            transition: opacity 0.3s;
-        }
-
-        #floating-btn::after {
-            content: '';
-            width: 26px;
-            height: 26px;
-            background-color: rgba(255,255,255,0.9);
-            border-radius: 50%;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.3);
-        }
-
-        #floating-btn:active {
-            background: rgba(50, 50, 50, 0.8);
-        }
-
-    </style>
-</head>
-<body>
-
-<div id="phone-screen">
+    /* 樱花容器 */
+    #sakura-container {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        pointer-events: none; z-index: 1; overflow: hidden;
+        transition: opacity 0.3s; /* 添加过渡 */
+    }
+    .sakura {
+        position: absolute; top: -50px; 
+        background: linear-gradient(120deg, #ffcdd2, #fff);
+        border-radius: 15px 0px 15px 0px;
+        opacity: 0; 
+    }
+    @keyframes fall {
+        0% { opacity: 0; top: -50px; transform: translateX(0) rotate(0deg); }
+        20% { opacity: 0.8; }
+        100% { opacity: 0; top: 100vh; transform: translateX(50px) rotate(360deg); }
+    }
     
-    <!-- 状态栏 HTML 已移除 -->
+    /* 噪点纹理 */
+    body::after {
+        content: ""; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.08'/%3E%3C/svg%3E");
+        pointer-events: none; z-index: 9999; opacity: 0.3;
+        transition: opacity 0.3s; /* 添加过渡 */
+    }
 
-    <!-- 主屏幕 (Home Screen) -->
-    <div id="home-screen" class="screen">
-      <div id="home-screen-pages-container">
-        <div id="home-screen-pages">
-          <div class="home-screen-page">
-            <div id="main-content-area">
-              
-              <!-- 桌面布局 -->
-              <div id="desktop-layout">
-                <div id="desktop-app-container">
-                  
-                  <!-- App A 入口 -->
-                  <div class="desktop-app-icon" onclick="openApp('a')">
-                    <div class="icon-bg-desktop">
-                      <img src="https://via.placeholder.com/100/007bff/ffffff?text=A" alt="App A">
-                    </div> 
-                    <span class="label">应用 A</span>
-                  </div>
+    /* ====== 2. 核心修复：App打开时的“纯净模式” ====== */
+    /* 当JS给body加上app-open类时，强制隐藏所有花里胡哨的背景 */
+    
+    /* 1. 移除Body的格纹，变成纯白 (解决刘海屏/底部安全区透出粉色的问题) */
+    body.app-open {
+        background-image: none !important;
+        background-color: #fff !important; 
+    }
 
-                  <!-- App B 入口 -->
-                  <div class="desktop-app-icon" onclick="openApp('b')">
-                    <div class="icon-bg-desktop">
-                      <img src="https://via.placeholder.com/100/28a745/ffffff?text=B" alt="App B">
-                    </div> 
-                    <span class="label">应用 B</span>
-                  </div>
+    /* 2. 隐藏噪点 (解决App画面看起来脏脏的问题) */
+    body.app-open::after {
+        opacity: 0 !important;
+        pointer-events: none;
+        display: none; 
+    }
+
+    /* 3. 隐藏星星和樱花 (解决元素遮挡App的问题) */
+    body.app-open #star-layer,
+    body.app-open #sakura-container {
+        opacity: 0 !important;
+        display: none;
+    }
+    /* ================================================== */
+
+    #phone-screen {
+        width: 100%; height: 100vh; position: relative; overflow: hidden; display: flex; flex-direction: column;
+        background: transparent; 
+    }
+
+    .screen, #home-screen-pages, .home-screen-page, #main-content-area {
+        width: 100%; height: 100%; display: flex; flex-direction: column;
+        overflow: hidden; position: relative;
+    }
+    #home-screen { padding: 20px 0; box-sizing: border-box; z-index: 10; }
+    #home-screen-pages-container { flex-grow: 1; }
+    #home-screen-pages { flex-direction: row; }
+    .home-screen-page, #main-content-area { align-items: center; justify-content: center; }
+
+    /* --- 桌面布局 (磁带区域) --- */
+    #desktop-layout {
+        display: flex; justify-content: center; align-items: center;
+        padding: 0 20px; box-sizing: border-box;
+    }
+    
+    #cassette-tape {
+        width: 330px; height: 210px;
+        background: linear-gradient(135deg, rgba(255,255,255,0.6), rgba(255,255,255,0.2)), var(--jelly-pink);
+        backdrop-filter: blur(8px); 
+        border-radius: 20px; 
+        border: 3px solid white; 
+        box-shadow: var(--soft-shadow);
+        position: relative;
+        display: flex; flex-direction: column;
+        padding: 12px; box-sizing: border-box;
+    }
+
+    .floating { animation: float 3s ease-in-out infinite; }
+    @keyframes float {
+        0% { transform: translateY(0px); }
+        50% { transform: translateY(-8px); }
+        100% { transform: translateY(0px); }
+    }
+
+    .screw {
+        position: absolute; width: 10px; height: 10px;
+        background: #f8bbd0; border-radius: 50%;
+        box-shadow: inset 1px 1px 2px white;
+    }
+    .tl { top: 10px; left: 10px; } .tr { top: 10px; right: 10px; }
+    .bl { bottom: 10px; left: 10px; } .br { bottom: 10px; right: 10px; }
+
+    .cassette-header {
+        height: 40px; background: white;
+        margin: 0 20px 8px 20px; border-radius: 8px;
+        transform: rotate(-1deg);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        display: flex; align-items: center; justify-content: center;
+    }
+    .sticker-label {
+        width: 100%; text-align: center;
+        border: 2px dashed #f48fb1; border-radius: 6px; margin: 3px; height: calc(100% - 6px);
+        display: flex; justify-content: space-around; align-items: center;
+    }
+    .tape-name { font-weight: bold; color: var(--deep-candy); font-size: 16px; letter-spacing: 1px; }
+    .tape-time { background: var(--deep-candy); color: white; padding: 2px 6px; border-radius: 10px; font-size: 10px; }
+
+    .magnetic-window {
+        flex-grow: 1;
+        background: rgba(255,255,255,0.3);
+        border-radius: 15px; border: 2px solid white;
+        margin: 0 5px; position: relative;
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 0 30px;
+    }
+
+    .tape-strip {
+        position: absolute; top: 50%; left: 10%; width: 80%; height: 35px;
+        background: var(--tape-dark); transform: translateY(-50%); z-index: 0;
+        border-radius: 4px; opacity: 0.8;
+    }
+
+    .spool-container {
+        position: relative; z-index: 1;
+        width: 70px; height: 70px; 
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        cursor: pointer; -webkit-tap-highlight-color: transparent;
+        transition: transform 0.1s;
+    }
+    .spool-container:active { transform: scale(0.9); }
+
+    .tape-roll {
+        position: absolute; width: 68px; height: 68px;
+        border-radius: 50%; background: var(--tape-dark); z-index: -1;
+        box-shadow: 0 0 0 3px rgba(121, 85, 72, 0.3);
+    }
+
+    .spool-gear {
+        position: absolute; width: 74px; height: 74px;
+        border-radius: 50%; border: 2px dashed white;
+        animation: rotateGear 8s linear infinite;
+    }
+    .right .spool-gear { animation-direction: reverse; }
+    @keyframes rotateGear { to { transform: rotate(360deg); } }
+
+    .spool-hole {
+        width: 48px; height: 48px;
+        background: white; border-radius: 50%;
+        border: 4px solid white; overflow: hidden;
+        box-shadow: inset 1px 1px 3px rgba(0,0,0,0.2);
+    }
+    .spool-hole img { width: 100%; height: 100%; object-fit: cover; }
+
+    .handwritten-label {
+        position: absolute; bottom: -28px;
+        background: #fff; color: var(--deep-candy);
+        padding: 3px 10px; border-radius: 10px;
+        font-size: 12px; font-weight: bold;
+        box-shadow: 2px 2px 0 rgba(0,0,0,0.05);
+        transform: rotate(-3deg); border: 1px solid #ffcdd2;
+    }
+    .right .handwritten-label { transform: rotate(3deg); }
+
+    .cassette-bottom { height: 15px; }
+
+    /* --- 悬浮按钮 (黑胶唱片) --- */
+    #fab-container {
+        position: fixed; bottom: 80px; right: 20px; z-index: 1000;
+        width: 64px; height: 64px; display: block;
+        transition: opacity 0.3s;
+    }
+
+    #fab-container.ghost-mode {
+        opacity: 0; 
+        pointer-events: auto;
+    }
+    #fab-container.ghost-mode.menu-open {
+        opacity: 1;
+    }
+
+    #fab-main {
+        width: 64px; height: 64px; border-radius: 50%; cursor: pointer;
+        display: flex; justify-content: center; align-items: center; position: relative;
+        background: repeating-radial-gradient(#222 0, #222 2px, #333 3px, #333 4px);
+        box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        -webkit-tap-highlight-color: transparent;
+    }
+    #fab-main::after {
+        content: ''; position: absolute; top:0; left:0; width:100%; height:100%;
+        border-radius: 50%;
+        background: linear-gradient(135deg, transparent 40%, rgba(255,255,255,0.3) 50%, transparent 60%);
+        pointer-events: none;
+    }
+    #fab-main::before {
+        content: ''; position: absolute; width: 26px; height: 26px;
+        background: var(--deep-candy); border-radius: 50%; border: 6px solid #f8bbd0;
+    }
+    #fab-main svg { position: relative; z-index: 2; width: 20px; fill: white; }
+
+    #fab-container.menu-open #fab-main { animation: spin 4s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .fab-actions {
+        position: absolute; bottom: 80px; right: 5px; display: flex; flex-direction: column; align-items: flex-end; gap: 12px;
+        opacity: 0; visibility: hidden; pointer-events: none;
+        transform: translateY(20px) scale(0.9); transition: all 0.2s;
+    }
+    #fab-container.menu-open .fab-actions { opacity: 1; visibility: visible; pointer-events: auto; transform: translateY(0) scale(1); }
+
+    .fab-mini-btn {
+        width: 44px; height: 44px; background: white; border-radius: 50%;
+        border: 2px solid var(--deep-candy); color: var(--deep-candy);
+        display: flex; justify-content: center; align-items: center;
+        box-shadow: 2px 2px 0 rgba(233, 30, 99, 0.1);
+        overflow: hidden; 
+        padding: 0; 
+    }
+    .fab-label {
+        background: white; color: var(--deep-candy); padding: 4px 8px; border-radius: 6px;
+        font-size: 12px; margin-right: 8px; border: 1px solid #f8bbd0;
+        box-shadow: 2px 2px 0 rgba(233, 30, 99, 0.1);
+        white-space: nowrap;
+    }
+
+    /* App 窗口及其他 */
+    .app-window {
+        width: 100%; height: 100%; position: absolute; top: 0; left: 0; background: white;
+        z-index: 50; display: none; flex-direction: column; opacity: 0; transform: scale(0.95);
+        transition: all 0.3s;
+    }
+    .app-window.active { display: flex; opacity: 1; transform: scale(1); }
+    .app-iframe { width: 100%; height: 100%; border: none; }
+    
+    #toast-msg {
+        position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%);
+        background: white; color: var(--deep-candy); border: 2px solid var(--deep-candy);
+        padding: 8px 20px; border-radius: 20px; font-size: 14px; z-index: 2000;
+        opacity: 0; visibility: hidden; transition: opacity 0.2s;
+        box-shadow: 4px 4px 0 rgba(233, 30, 99, 0.15);
+    }
+    #toast-msg.show { opacity: 1; visibility: visible; }
+    
+    .fab-action-btn {
+        display: flex; align-items: center; justify-content: flex-end; cursor: pointer;
+    }
+    .fab-mini-btn img {
+        width: 100%; height: 100%; object-fit: cover;
+    }
+    .fab-mini-btn svg {
+        width: 24px; height: 24px; fill: var(--deep-candy); 
+    }
+</style>
+
+  </head>
+  <body>
+    <!-- 1. 星星背景层 -->
+    <div id="star-layer"></div>
+    <!-- 樱花容器 -->
+    <div id="sakura-container"></div>
+
+    <div id="phone-screen">
+      <div id="home-screen" class="screen">
+        <div id="home-screen-pages-container">
+          <div id="home-screen-pages">
+            <div class="home-screen-page">
+              <div id="main-content-area">
+<div id="desktop-layout">
+    <div id="cassette-tape" class="floating">
+        <div class="screw tl"></div>
+        <div class="screw tr"></div>
+        <div class="screw bl"></div>
+        <div class="screw br"></div>
+
+        <div class="cassette-header">
+            <div class="sticker-label">
+                <span class="tape-name">💖 Ephone MIX 💖</span>
+                <span class="tape-time">A side</span>
+            </div>
+        </div>
+
+        <div class="magnetic-window">
+            <div class="spool-container left" onclick="openApp('app-a')">
+                <div class="spool-gear"></div>
+                <div class="spool-hole">
+                    <img src="https://s3plus.meituan.net/opapisdk/op_ticket_885190757_1756312261242_qdqqd_g0eriz.jpeg" alt="App A">
+                </div>
+                <div class="tape-roll"></div>
+                <span class="handwritten-label">330</span>
+            </div>
+
+            <div class="tape-strip"></div>
+
+            <div class="spool-container right" onclick="openApp('app-b')">
+                <div class="spool-gear"></div>
+                <div class="spool-hole">
+                    <img src="https://i.postimg.cc/Kj8JnRcp/267611-CC01-F8-A3-B4910-A2-C2-FFDE479-DC.jpg" alt="App B">
+                </div>
+                <div class="tape-roll"></div>
+                <span class="handwritten-label">兔K</span>
+            </div>
+        </div>
+
+        <div class="cassette-bottom"></div>
+    </div>
+</div>
 
                 </div>
               </div>
-
             </div>
           </div>
         </div>
       </div>
+
+      <!-- App A 页面 -->
+      <div id="app-a" class="app-window app-frame">
+        <iframe data-src="https://cx3300-1.github.io/ooooka/" src="" class="app-iframe"></iframe>
+      </div>
+
+      <div id="app-b" class="app-window app-frame">
+        <iframe data-src="https://cx3300-1.github.io/-k-/" src="" class="app-iframe"></iframe>
+      </div>
+
+      <!-- 悬浮按钮 -->
+      <div id="fab-container">
+        <div class="fab-actions">
+          <div class="fab-action-btn" onclick="openApp('app-a')">
+            <span class="fab-label">330</span>
+            <div class="fab-mini-btn" style="border-color: #fff;">
+                <img src="https://s3plus.meituan.net/opapisdk/op_ticket_885190757_1756312261242_qdqqd_g0eriz.jpeg" alt="330">
+            </div>
+          </div>
+
+          <div class="fab-action-btn" onclick="openApp('app-b')">
+            <span class="fab-label">兔K</span>
+            <div class="fab-mini-btn" style="border-color: #fff;">
+                <img src="https://i.postimg.cc/Kj8JnRcp/267611-CC01-F8-A3-B4910-A2-C2-FFDE479-DC.jpg" alt="兔K">
+            </div>
+          </div>
+
+          <div class="fab-action-btn" onclick="hideFab()">
+            <span class="fab-label">隐藏按钮</span>
+            <div class="fab-mini-btn">
+                <svg viewBox="0 0 24 24">
+                    <path d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.16c0-1.66-1.34-3-3-3l-.17.01z"></path>
+                </svg>
+            </div>
+          </div>
+
+          <div class="fab-action-btn" onclick="goHome()">
+            <span class="fab-label">主页</span>
+            <div class="fab-mini-btn">
+                <svg viewBox="0 0 24 24">
+                    <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"></path>
+                </svg>
+            </div>
+          </div>
+        </div>
+
+
+        <div id="fab-main"></div>
+      </div>
+
+      <div id="toast-msg"></div>
     </div>
 
-    <!-- App A 页面 (全屏 Iframe) -->
-    <div id="app-a" class="app-window">
-        <!-- 替换为你需要的链接 -->
-        <iframe src="https://cx3300-1.github.io/ooooka/" class="app-iframe" title="App A"></iframe>
-    </div>
+    <script>
+      const fabContainer = document.getElementById('fab-container');
+      const fabMain = document.getElementById('fab-main');
 
-    <!-- App B 页面 (全屏 Iframe) -->
-    <div id="app-b" class="app-window">
-        <!-- 替换为你需要的链接 -->
-        <iframe src="https://cx3300-1.github.io/sfsfdf/" class="app-iframe" title="App B"></iframe>
-    </div>
+      const launcherScreen = document.getElementById('home-screen');
+      const frames = document.querySelectorAll('.app-frame');
+      const toastMsg = document.getElementById('toast-msg');
 
-    <!-- 悬浮按钮 -->
-    <div id="floating-btn"></div>
+      const menuIconSvg =
+        '<svg viewBox="0 0 24 24"><path d="M4 18h16c.55 0 1-.45 1-1s-.45-1-1-1H4c-.55 0-1 .45-1 1s.45 1 1 1zm0-5h16c.55 0 1-.45 1-1s-.45-1-1-1H4c-.55 0-1 .45-1 1s.45 1 1 1zM3 7c0 .55.45 1 1 1h16c.55 0 1-.45 1-1s-.45-1-1-1H4c-.55 0-1 .45-1 1z"/></svg>';
+      const closeIconSvg =
+        '<svg viewBox="0 0 24 24"><path d="M18.3 5.71a.996.996 0 0 0-1.41 0L12 10.59 7.11 5.7a.996.996 0 1 0-1.41 1.41L10.59 12 5.7 16.89a.996.996 0 1 0 1.41 1.41L12 13.41l4.89 4.89a.996.996 0 1 0 1.41-1.41L13.41 12l4.89-4.89c.38-.38.38-1.02 0-1.4z"/></svg>';
 
-</div>
+      fabMain.innerHTML = menuIconSvg;
 
-<script>
-    // --- 1. 基础逻辑：时间更新函数已移除 ---
+      function openApp(frameId) {
+        document.body.classList.add('app-open');
 
-    // --- 2. App 切换逻辑 ---
-    const homeScreen = document.getElementById('home-screen');
-    const appA = document.getElementById('app-a');
-    const appB = document.getElementById('app-b');
-    let currentApp = null; 
+        launcherScreen.style.opacity = '0';
+        launcherScreen.style.transform = 'scale(0.95)';
 
-    function openApp(appId) {
-        let activeApp;
-        if (appId === 'a') {
-            activeApp = appA;
-            currentApp = 'a';
-        } else if (appId === 'b') {
-            activeApp = appB;
-            currentApp = 'b';
-        }
+        frames.forEach(frame => {
+          if (frame.id === frameId) {
+            frame.style.display = 'flex';
+            setTimeout(() => frame.classList.add('active'), 10);
+            const iframe = frame.querySelector('iframe');
+            if (iframe && iframe.dataset.src) {
+              iframe.src = iframe.dataset.src;
+            }
+          } else {
+            frame.classList.remove('active');
+            frame.style.display = 'none';
+            const iframe = frame.querySelector('iframe');
+            if (iframe) iframe.src = ''; 
+          }
+        });
+        closeMenu();
+      }
 
-        if (activeApp) {
-            activeApp.style.display = 'flex';
-            // 延迟一点点加 class 触发 transition
-            setTimeout(() => activeApp.classList.add('active'), 10);
-            
-            // 主屏幕缩小并变透明
-            homeScreen.style.transform = 'scale(0.95)';
-            homeScreen.style.opacity = '0';
-        }
-    }
+      function goHome() {
+        document.body.classList.remove('app-open');
 
-    function goHome() {
-        if (!currentApp) return; 
+        launcherScreen.style.opacity = '1';
+        launcherScreen.style.transform = 'scale(1)';
 
-        const activeApp = currentApp === 'a' ? appA : appB;
-        
-        // 移除 active 触发缩小消失动画
-        activeApp.classList.remove('active');
-        
         setTimeout(() => {
-            activeApp.style.display = 'none';
+          frames.forEach(frame => {
+            frame.classList.remove('active');
+            frame.style.display = 'none';
+            const iframe = frame.querySelector('iframe');
+            if (iframe) iframe.src = '';
+          });
         }, 300);
+        closeMenu();
+      }
 
-        // 恢复主屏幕
-        homeScreen.style.transform = 'scale(1)';
-        homeScreen.style.opacity = '1';
-        
-        currentApp = null;
-    }
+      function hideFab() {
+        closeMenu();
+        const mainRect = fabMain.getBoundingClientRect();
+        fabContainer.style.left = mainRect.left + 'px';
+        fabContainer.style.top = mainRect.top + 'px';
+        fabContainer.style.bottom = 'auto';
+        fabContainer.style.right = 'auto';
+        fabContainer.classList.add('ghost-mode');
+        showToast('已隐藏。点击当前位置可呼出。');
+      }
 
-    // --- 3. 悬浮按钮逻辑 (拖拽 + 点击) ---
-    const floatBtn = document.getElementById('floating-btn');
-    let isDragging = false;
-    let startX, startY, initialLeft, initialTop;
-    let moveThreshold = 0; 
+      function showFab() {
+        fabContainer.classList.remove('ghost-mode');
+      }
 
-    function dragStart(e) {
-        isDragging = false;
-        moveThreshold = 0;
-        
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      function showToast(text) {
+        toastMsg.innerText = text;
+        toastMsg.classList.add('show');
+        setTimeout(() => {
+          toastMsg.classList.remove('show');
+        }, 3000);
+      }
 
-        startX = clientX;
-        startY = clientY;
-        
-        const rect = floatBtn.getBoundingClientRect();
-        const parentRect = document.getElementById('phone-screen').getBoundingClientRect();
-        // 计算相对于 phone-screen 的偏移
-        initialLeft = rect.left - parentRect.left;
-        initialTop = rect.top - parentRect.top;
+      function toggleMenu() {
+        if (fabContainer.classList.contains('ghost-mode')) {
+          showFab();
+          setTimeout(() => {
+            fabContainer.classList.add('menu-open');
+            fabMain.classList.add('expanded');
+            fabMain.innerHTML = closeIconSvg;
+          }, 50);
+          return;
+        }
+
+        fabContainer.classList.toggle('menu-open');
+        fabMain.classList.toggle('expanded');
+
+        if (fabMain.classList.contains('expanded')) {
+          fabMain.innerHTML = closeIconSvg;
+        } else {
+          fabMain.innerHTML = menuIconSvg;
+        }
+      }
+
+      function closeMenu() {
+        fabContainer.classList.remove('menu-open');
+        fabMain.classList.remove('expanded');
+        fabMain.innerHTML = menuIconSvg;
+      }
+
+      document.addEventListener('click', e => {
+        if (!fabContainer.contains(e.target) && fabContainer.classList.contains('menu-open')) {
+          closeMenu();
+        }
+      });
+
+      let isDragging = false;
+      let hasMoved = false;
+      let startX, startY, initialLeft, initialTop;
+      const dragThreshold = 5;
+
+      fabMain.addEventListener('mousedown', startDrag);
+      fabMain.addEventListener('touchstart', startDrag, { passive: false });
+
+      function startDrag(e) {
+        if (fabContainer.classList.contains('ghost-mode')) return;
+
+        if (fabContainer.classList.contains('menu-open')) {
+          closeMenu();
+        }
+
+        isDragging = true;
+        hasMoved = false;
 
         if (e.type === 'touchstart') {
-            document.addEventListener('touchmove', dragMove, { passive: false });
-            document.addEventListener('touchend', dragEnd);
+          startX = e.touches[0].clientX;
+          startY = e.touches[0].clientY;
         } else {
-            document.addEventListener('mousemove', dragMove);
-            document.addEventListener('mouseup', dragEnd);
-        }
-    }
-
-    function dragMove(e) {
-        e.preventDefault(); 
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-
-        const dx = clientX - startX;
-        const dy = clientY - startY;
-        
-        moveThreshold += Math.abs(dx) + Math.abs(dy);
-        if (moveThreshold > 5) isDragging = true;
-
-        floatBtn.style.left = `${initialLeft + dx}px`;
-        floatBtn.style.top = `${initialTop + dy}px`;
-        floatBtn.style.right = 'auto'; 
-    }
-
-    function dragEnd() {
-        document.removeEventListener('touchmove', dragMove);
-        document.removeEventListener('touchend', dragEnd);
-        document.removeEventListener('mousemove', dragMove);
-        document.removeEventListener('mouseup', dragEnd);
-
-        if (!isDragging) {
-            handleBtnClick();
-        } else {
-            snapToEdge();
-        }
-    }
-
-    function snapToEdge() {
-        const phoneScreen = document.getElementById('phone-screen');
-        const screenWidth = phoneScreen.clientWidth;
-        const screenHeight = phoneScreen.clientHeight;
-        
-        let currentLeft = parseFloat(floatBtn.style.left);
-        if (isNaN(currentLeft)) currentLeft = floatBtn.offsetLeft;
-        
-        let currentTop = parseFloat(floatBtn.style.top);
-        if (isNaN(currentTop)) currentTop = floatBtn.offsetTop;
-
-        const btnWidth = floatBtn.offsetWidth;
-
-        floatBtn.style.transition = 'all 0.3s ease';
-        
-        // 左右吸附
-        if (currentLeft + btnWidth / 2 < screenWidth / 2) {
-            floatBtn.style.left = '10px';
-        } else {
-            floatBtn.style.left = (screenWidth - btnWidth - 10) + 'px';
+          startX = e.clientX;
+          startY = e.clientY;
         }
 
-        // 上下边界限制
-        if (currentTop < 50) floatBtn.style.top = '50px';
-        if (currentTop > screenHeight - 80) floatBtn.style.top = (screenHeight - 80) + 'px';
+        const rect = fabContainer.getBoundingClientRect();
+        initialLeft = rect.left;
+        initialTop = rect.top;
 
-        setTimeout(() => {
-            floatBtn.style.transition = 'opacity 0.3s';
-        }, 300);
-    }
+        fabContainer.style.bottom = 'auto';
+        fabContainer.style.right = 'auto';
+        fabContainer.style.left = initialLeft + 'px';
+        fabContainer.style.top = initialTop + 'px';
 
-    function handleBtnClick() {
-        if (navigator.vibrate) navigator.vibrate(50);
+        document.addEventListener('mousemove', onDrag);
+        document.addEventListener('touchmove', onDrag, { passive: false });
+        document.addEventListener('mouseup', stopDrag);
+        document.addEventListener('touchend', stopDrag);
+      }
 
-        if (currentApp) {
-            goHome();
+      function onDrag(e) {
+        if (!isDragging) return;
+        e.preventDefault();
+
+        let clientX, clientY;
+        if (e.type === 'touchmove') {
+          clientX = e.touches[0].clientX;
+          clientY = e.touches[0].clientY;
         } else {
-            floatBtn.style.transform = 'scale(0.8)';
-            setTimeout(() => floatBtn.style.transform = 'scale(1)', 100);
+          clientX = e.clientX;
+          clientY = e.clientY;
         }
-    }
 
-    floatBtn.addEventListener('mousedown', dragStart);
-    floatBtn.addEventListener('touchstart', dragStart, { passive: false });
+        const deltaX = clientX - startX;
+        const deltaY = clientY - startY;
 
-    // --- 4. Service Worker 注册 ---
-    if ('serviceWorker' in navigator) {
+        if (Math.abs(deltaX) > dragThreshold || Math.abs(deltaY) > dragThreshold) {
+          hasMoved = true;
+        }
+
+        fabContainer.style.left = initialLeft + deltaX + 'px';
+        fabContainer.style.top = initialTop + deltaY + 'px';
+      }
+
+      function stopDrag() {
+        isDragging = false;
+        document.removeEventListener('mousemove', onDrag);
+        document.removeEventListener('touchmove', onDrag);
+        document.removeEventListener('mouseup', stopDrag);
+        document.removeEventListener('touchend', stopDrag);
+      }
+
+      fabMain.addEventListener('click', e => {
+        e.stopPropagation();
+        if (!hasMoved) {
+          toggleMenu();
+        }
+      });
+
+      function createSakura() {
+        const container = document.getElementById('sakura-container');
+        const petalCount = 6; 
+        
+        for (let i = 0; i < petalCount; i++) {
+            const petal = document.createElement('div');
+            petal.classList.add('sakura');
+            const startLeft = Math.random() * 100; 
+            const delay = Math.random() * 15; 
+            const duration = Math.random() * 5 + 8; 
+            const size = Math.random() * 8 + 10; 
+            
+            petal.style.left = startLeft + '%';
+            petal.style.width = size + 'px';
+            petal.style.height = size + 'px';
+            petal.style.animation = `fall ${duration}s linear ${delay}s infinite`;
+            container.appendChild(petal);
+        }
+      }
+
+      window.addEventListener('DOMContentLoaded', createSakura);
+      if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-            navigator.serviceWorker.register('sw.js')
-                .then(registration => console.log('SW registered'))
-                .catch(err => console.log('SW failed', err));
+          navigator.serviceWorker.register('sw.js');
         });
-    }
-</script>
-</body>
+      }
+    </script>
+  </body>
 </html>
+
